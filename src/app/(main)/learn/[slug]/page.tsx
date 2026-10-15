@@ -3,6 +3,10 @@ import Link from "next/link";
 import { ArrowLeft, Clock, ShieldCheck, AlertTriangle, BookOpen, HelpCircle } from "lucide-react";
 import { ARTICLES_DATA } from "@/features/learn/data/articles";
 
+export async function generateStaticParams() {
+  return ARTICLES_DATA.map((a) => ({ slug: a.slug }));
+}
+
 export default async function ArticleDetailPage({
   params,
 }: {

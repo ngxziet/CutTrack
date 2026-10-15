@@ -118,6 +118,22 @@ const exerciseDetails: Record<
   },
 };
 
+export async function generateStaticParams() {
+  return [
+    { slug: "push-up" },
+    { slug: "diamond-push-up" },
+    { slug: "squat" },
+    { slug: "reverse-lunge" },
+    { slug: "plank" },
+    { slug: "reverse-crunch" },
+    { slug: "dead-bug" },
+    { slug: "glute-bridge" },
+    { slug: "backpack-row" },
+    { slug: "mountain-climber" },
+    { slug: "football" },
+  ];
+}
+
 export default async function ExerciseDetailPage({
   params,
 }: {
