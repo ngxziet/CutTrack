@@ -83,10 +83,10 @@ export function DesktopSidebar() {
       </div>
 
       {/* Grouped Navigation items */}
-      <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-2.5 overflow-y-auto pb-4">
         {navigationGroups.map((group) => (
           <div key={group.title} className="space-y-1">
-            <div className="px-3 pb-1 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
+            <div className="px-3 pb-0.5 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
               <span>{group.title}</span>
               {group.badge && (
                 <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20">
@@ -138,7 +138,7 @@ export function DesktopSidebar() {
       </nav>
 
       {/* Target status snippet */}
-      <div className="p-3.5 m-3 rounded-xl bg-secondary/50 border border-border text-xs space-y-1.5">
+      <div className="p-2.5 mx-3 mb-3 mt-1 rounded-xl bg-secondary/50 border border-border text-xs space-y-1 shrink-0">
         <div className="flex justify-between items-center text-muted-foreground">
           <span>Mục tiêu</span>
           <span className="font-semibold text-foreground">68kg → 62kg</span>
@@ -147,7 +147,7 @@ export function DesktopSidebar() {
           <span>Ngân sách</span>
           <span className="font-semibold text-emerald-600 dark:text-emerald-400">70k - 80k/ngày</span>
         </div>
-        <div className="w-full bg-border rounded-full h-1.5 mt-1 overflow-hidden">
+        <div className="w-full bg-border rounded-full h-1 mt-0.5 overflow-hidden">
           <div className="bg-primary h-full w-[25%]" />
         </div>
       </div>

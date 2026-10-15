@@ -58,3 +58,13 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Relocate any Next.js dev tools or toast overlays away from the sidebar to bottom-right */
+nextjs-portal,
+[data-nextjs-dev-tools-button],
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay] {
+  left: auto !important;
+  right: 16px !important;
+}
+
