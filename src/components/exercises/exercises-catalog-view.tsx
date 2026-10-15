@@ -75,22 +75,16 @@ export function ExercisesCatalogView({ exercises, userConfigs }: ExercisesCatalo
                 className="group rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:border-primary/50 transition-all flex flex-col"
               >
                 {/* 16:9 Image Preview with active animation */}
-                <div className="relative aspect-[16/9] w-full bg-slate-950 overflow-hidden flex items-center justify-center p-2">
-                  <object
-                    data={exercise.animationUrl}
-                    type="image/svg+xml"
-                    className="w-full h-full object-contain pointer-events-none scale-105 group-hover:scale-115 transition-transform duration-300"
-                    aria-label={exercise.name}
-                  >
-                    <img
-                      src={exercise.posterUrl}
-                      alt={exercise.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </object>
+                <div className="relative aspect-[16/9] w-full bg-slate-950/90 overflow-hidden flex items-center justify-center p-2">
+                  <img
+                    src={exercise.animationUrl}
+                    alt={exercise.name}
+                    className="w-full h-full object-contain scale-105 group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
+                  />
                   <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-sm">
-                      <Activity className="w-2.5 h-2.5 animate-pulse" /> 60 FPS
+                      <Activity className="w-2.5 h-2.5 animate-pulse" /> 3D Motion
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-background/90 backdrop-blur-md border border-border text-foreground">
                       {exercise.difficulty}

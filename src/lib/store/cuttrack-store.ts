@@ -110,6 +110,7 @@ export interface ExerciseConfig {
   restSeconds: number;
   targetRpe: number;
   notes?: string;
+  customMediaUrl?: string;
 }
 
 export interface CutTrackDataState {

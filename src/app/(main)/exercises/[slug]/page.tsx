@@ -141,10 +141,10 @@ export default async function ExerciseDetailPage({
     variations: { easier: "Giảm biên độ hoặc sử dụng điểm tựa.", harder: "Tăng thời gian chịu tải (TUT)." },
   };
 
-  const posterUrl = `/media/exercises/posters/${slug}.svg`;
-  const animationUrl = `/media/exercises/animations/${slug}.svg`;
   const state = await getAppState();
   const userConfig = state.exerciseConfigs?.[slug];
+  const posterUrl = userConfig?.customMediaUrl || `/media/exercises/posters/${slug}.jpg`;
+  const animationUrl = userConfig?.customMediaUrl || `/media/exercises/animations/${slug}.gif`;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
