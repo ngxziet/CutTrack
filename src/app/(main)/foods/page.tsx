@@ -4,6 +4,8 @@ import { BookOpen, Search, ArrowRight, CheckCircle2, AlertCircle } from "lucide-
 import { getAppState } from "@/lib/server-actions";
 import { formatCurrencyVND } from "@/lib/utils";
 
+import { AddFoodModal } from "@/components/foods/add-food-modal";
+
 export default async function FoodsPage({
   searchParams,
 }: {
@@ -24,7 +26,7 @@ export default async function FoodsPage({
   });
 
   const categories = [
-    { key: "ALL", label: "Tất cả 15 món" },
+    { key: "ALL", label: `Tất cả (${state.foods.length} món)` },
     { key: "STREET_FOOD", label: "Món quán bình dân" },
     { key: "HOMEMADE_PROTEIN", label: "Đạm luộc tại nhà" },
     { key: "SPECIAL_MEAL", label: "Bữa tiệc đá banh" },
@@ -33,15 +35,19 @@ export default async function FoodsPage({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-primary" />
-          Thư Viện Món Ăn Việt Nam (Có Hình Ảnh & Định Lượng)
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Dữ liệu dinh dưỡng minh bạch, phân tách rõ khối lượng cả xương và phần ăn được thực tế.
-        </p>
+      {/* Header with Add Food Modal */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-primary" />
+            Thư Viện Món Ăn Việt Nam ({state.foods.length} Món)
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Dữ liệu dinh dưỡng bóc tách định lượng thực tế, hỗ trợ nhúng AI tự động tính calo, đạm, carb, béo và giá tiền.
+          </p>
+        </div>
+
+        <AddFoodModal />
       </div>
 
       {/* Category Filter Pills */}

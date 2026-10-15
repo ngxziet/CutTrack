@@ -10,6 +10,7 @@ import {
   WeightEntry,
   UserProfileState,
   ExerciseConfig,
+  FoodItem,
 } from "./store/cuttrack-store";
 import {
   REFERENCE_BMR_KCAL,
@@ -475,5 +476,129 @@ export async function getMealHistoryAction() {
   });
 
   return { success: true, history };
+}
+
+export interface CreateFoodInput {
+  name: string;
+  category: "STREET_FOOD" | "STAPLE" | "HOMEMADE_PROTEIN" | "SPECIAL_MEAL" | "BEVERAGE";
+  defaultGrams: number;
+  edibleYieldPercent: number;
+  weightBasis: "RAW" | "COOKED" | "EDIBLE" | "BONE_IN";
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+  defaultPriceVnd: number;
+  priceRequiresUserEntry?: boolean;
+  thumbnailUrl?: string;
+  detailUrl?: string;
+  confidenceNote?: string;
+  isHomePreparedAllowed?: boolean;
+  isRestaurantFood?: boolean;
+}
+
+function generateFoodSlug(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export async function createFoodAction(input: CreateFoodInput) {
+  const state = loadCutTrackState();
+  let baseSlug = generateFoodSlug(input.name);
+  if (!baseSlug) baseSlug = `mon-an-${Date.now()}`;
+
+  let slug = baseSlug;
+  let counter = 1;
+  while (state.foods.some((f) => f.slug === slug)) {
+    slug = `${baseSlug}-${counter++}`;
+  }
+
+  const defaultThumb = input.thumbnailUrl?.trim() || "/media/foods/thumbnails/com-tam-suon.svg";
+  const defaultDetail = input.detailUrl?.trim() || defaultThumb;
+
+  const newFood: FoodItem = {
+    id: `food-${slug}-${Date.now()}`,
+    slug,
+    name: input.name.trim(),
+    category: input.category || "STREET_FOOD",
+    defaultGrams: Number(input.defaultGrams) || 300,
+    edibleYieldPercent: Number(input.edibleYieldPercent) || 100,
+    weightBasis: input.weightBasis || "COOKED",
+    caloriesPer100g: Number(input.caloriesPer100g) || 100,
+    proteinPer100g: Math.round((Number(input.proteinPer100g) || 5) * 10) / 10,
+    carbsPer100g: Math.round((Number(input.carbsPer100g) || 10) * 10) / 10,
+    fatPer100g: Math.round((Number(input.fatPer100g) || 2) * 10) / 10,
+    defaultPriceVnd: Number(input.defaultPriceVnd) || 0,
+    priceRequiresUserEntry: input.priceRequiresUserEntry ?? (Number(input.defaultPriceVnd) === 0),
+    thumbnailUrl: defaultThumb,
+    detailUrl: defaultDetail,
+    confidenceNote: input.confidenceNote?.trim() || "Món ăn do bạn tự thêm vào thư viện.",
+    isHomePreparedAllowed: input.isHomePreparedAllowed ?? true,
+    isRestaurantFood: input.isRestaurantFood ?? true,
+  };
+
+  state.foods.push(newFood);
+  saveCutTrackState(state);
+
+  revalidatePath("/foods");
+  revalidatePath("/diary");
+  revalidatePath("/meal-planner");
+
+  return { success: true, food: newFood };
+}
+
+export async function updateFoodAction(slug: string, updates: Partial<CreateFoodInput>) {
+  const state = loadCutTrackState();
+  const food = state.foods.find((f) => f.slug === slug);
+  if (!food) {
+    return { success: false, message: "Không tìm thấy món ăn" };
+  }
+
+  if (updates.name) food.name = updates.name.trim();
+  if (updates.category) food.category = updates.category;
+  if (updates.defaultGrams !== undefined) food.defaultGrams = Number(updates.defaultGrams);
+  if (updates.edibleYieldPercent !== undefined) food.edibleYieldPercent = Number(updates.edibleYieldPercent);
+  if (updates.weightBasis) food.weightBasis = updates.weightBasis;
+  if (updates.caloriesPer100g !== undefined) food.caloriesPer100g = Number(updates.caloriesPer100g);
+  if (updates.proteinPer100g !== undefined) food.proteinPer100g = Math.round(Number(updates.proteinPer100g) * 10) / 10;
+  if (updates.carbsPer100g !== undefined) food.carbsPer100g = Math.round(Number(updates.carbsPer100g) * 10) / 10;
+  if (updates.fatPer100g !== undefined) food.fatPer100g = Math.round(Number(updates.fatPer100g) * 10) / 10;
+  if (updates.defaultPriceVnd !== undefined) food.defaultPriceVnd = Number(updates.defaultPriceVnd);
+  if (updates.thumbnailUrl) food.thumbnailUrl = updates.thumbnailUrl.trim();
+  if (updates.detailUrl) food.detailUrl = updates.detailUrl.trim();
+  if (updates.confidenceNote) food.confidenceNote = updates.confidenceNote.trim();
+
+  saveCutTrackState(state);
+
+  revalidatePath("/foods");
+  revalidatePath(`/foods/${slug}`);
+  revalidatePath("/diary");
+  revalidatePath("/meal-planner");
+
+  return { success: true, food };
+}
+
+export async function deleteFoodAction(slug: string) {
+  const state = loadCutTrackState();
+  const initialLength = state.foods.length;
+  state.foods = state.foods.filter((f) => f.slug !== slug);
+
+  if (state.foods.length === initialLength) {
+    return { success: false, message: "Không tìm thấy món ăn để xóa" };
+  }
+
+  saveCutTrackState(state);
+
+  revalidatePath("/foods");
+  revalidatePath("/diary");
+  revalidatePath("/meal-planner");
+
+  return { success: true };
 }
 
