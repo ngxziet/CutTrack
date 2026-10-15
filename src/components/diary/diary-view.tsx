@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useRef, useEffect, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   UtensilsCrossed,
   Plus,
   Trash2,
+  Edit3,
   Copy,
   AlertCircle,
   CheckCircle2,
@@ -20,9 +21,15 @@ import {
   Clock,
   ArrowRight,
   TrendingDown,
+  Sparkles,
 } from "lucide-react";
-import { FoodItem, MealSlotData } from "@/lib/store/cuttrack-store";
-import { addFoodToMealAction, deleteMealItemAction, copyYesterdayMealAction } from "@/lib/server-actions";
+import { FoodItem, MealSlotData, MealEntryItem } from "@/lib/store/cuttrack-store";
+import {
+  addFoodToMealAction,
+  updateMealItemAction,
+  deleteMealItemAction,
+  copyYesterdayMealAction,
+} from "@/lib/server-actions";
 import { formatCurrencyVND } from "@/lib/utils";
 
 interface DiaryViewProps {
@@ -57,6 +64,27 @@ export function DiaryView({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const isSubmittingRef = useRef(false);
+
+  // Edit item state
+  const [editingItem, setEditingItem] = useState<{
+    slot: "LUNCH" | "DINNER";
+    item: MealEntryItem;
+  } | null>(null);
+  const [editGrams, setEditGrams] = useState<number>(300);
+  const [editPrice, setEditPrice] = useState<string>("");
+  const [editHomePrepared, setEditHomePrepared] = useState<boolean>(false);
+  const [isEditingSubmitting, setIsEditingSubmitting] = useState<boolean>(false);
+  const isEditingRef = useRef(false);
+
+  // Sync state if allDiaryDates or initialDiary changes
+  useEffect(() => {
+    if (allDiaryDates[currentDate]) {
+      setDiary(allDiaryDates[currentDate]);
+    } else if (currentDate === initialDate) {
+      setDiary(initialDiary);
+    }
+  }, [allDiaryDates, currentDate, initialDate, initialDiary]);
 
   // Helper to change date
   function handleDateChange(newDate: string) {
@@ -107,11 +135,12 @@ export function DiaryView({
 
   async function handleAddFood(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedSlot || !selectedFood) return;
+    if (!selectedSlot || !selectedFood || isSubmittingRef.current) return;
 
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
-    setIsSubmitting(true);
 
     try {
       // Validate lunch rule
@@ -120,25 +149,31 @@ export function DiaryView({
       }
 
       const priceVal = customPrice !== "" ? parseInt(customPrice, 10) : selectedFood.defaultPriceVnd;
+      const clientReqId = `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
 
       const res = await addFoodToMealAction({
-        date: initialDate,
+        date: currentDate,
         slot: selectedSlot,
         foodId: selectedFood.id,
         grams: Number(grams),
         customPriceVnd: isNaN(priceVal) ? selectedFood.defaultPriceVnd : priceVal,
         isHomePrepared: selectedSlot === "DINNER" ? isHomePrepared : false,
+        clientRequestId: clientReqId,
       });
 
-      if (res.success) {
-        // Update local state
+      if (res.success && res.item) {
+        // Update local state without duplicating
         setDiary((prev) => {
           const next = { ...prev };
           const slotData = next[selectedSlot];
-          slotData.items = [...slotData.items, res.item];
-          slotData.totalCalories = slotData.items.reduce((s, i) => s + i.calories, 0);
-          slotData.totalProtein = Math.round(slotData.items.reduce((s, i) => s + i.protein, 0) * 10) / 10;
-          slotData.totalCostVnd = slotData.items.reduce((s, i) => s + i.priceVnd, 0);
+          if (!slotData.items.some((i) => i.id === res.item.id)) {
+            slotData.items = [...slotData.items, res.item];
+            slotData.totalCalories = slotData.items.reduce((s, i) => s + i.calories, 0);
+            slotData.totalProtein = Math.round(slotData.items.reduce((s, i) => s + i.protein, 0) * 10) / 10;
+            slotData.totalCarbs = Math.round(slotData.items.reduce((s, i) => s + i.carbs, 0) * 10) / 10;
+            slotData.totalFat = Math.round(slotData.items.reduce((s, i) => s + i.fat, 0) * 10) / 10;
+            slotData.totalCostVnd = slotData.items.reduce((s, i) => s + i.priceVnd, 0);
+          }
           return next;
         });
 
@@ -149,22 +184,81 @@ export function DiaryView({
     } catch (err: any) {
       setErrorMessage(err.message || "Có lỗi xảy ra khi thêm món");
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
+    }
+  }
+
+  function handleOpenEditModal(slot: "LUNCH" | "DINNER", item: MealEntryItem) {
+    setEditingItem({ slot, item });
+    setEditGrams(item.grams);
+    setEditPrice(item.priceVnd.toString());
+    setEditHomePrepared(item.isHomePrepared || false);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingItem || isEditingRef.current) return;
+
+    isEditingRef.current = true;
+    setIsEditingSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const priceVal = editPrice !== "" ? parseInt(editPrice, 10) : editingItem.item.priceVnd;
+      const res = await updateMealItemAction({
+        date: currentDate,
+        slot: editingItem.slot,
+        itemId: editingItem.item.id,
+        grams: Number(editGrams),
+        customPriceVnd: isNaN(priceVal) ? editingItem.item.priceVnd : priceVal,
+        isHomePrepared: editingItem.slot === "DINNER" ? editHomePrepared : false,
+      });
+
+      if (res.success && res.item) {
+        setDiary((prev) => {
+          const next = { ...prev };
+          const slotData = next[editingItem.slot];
+          const idx = slotData.items.findIndex((i) => i.id === editingItem.item.id);
+          if (idx !== -1) {
+            slotData.items[idx] = res.item;
+          }
+          slotData.totalCalories = slotData.items.reduce((s, i) => s + i.calories, 0);
+          slotData.totalProtein = Math.round(slotData.items.reduce((s, i) => s + i.protein, 0) * 10) / 10;
+          slotData.totalCarbs = Math.round(slotData.items.reduce((s, i) => s + i.carbs, 0) * 10) / 10;
+          slotData.totalFat = Math.round(slotData.items.reduce((s, i) => s + i.fat, 0) * 10) / 10;
+          slotData.totalCostVnd = slotData.items.reduce((s, i) => s + i.priceVnd, 0);
+          return next;
+        });
+
+        setSuccessMessage(`Đã cập nhật món ${editingItem.item.foodName} thành công!`);
+        setEditingItem(null);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Lỗi khi cập nhật món ăn");
+    } finally {
+      isEditingRef.current = false;
+      setIsEditingSubmitting(false);
     }
   }
 
   async function handleDeleteItem(slot: "LUNCH" | "DINNER", itemId: string) {
     try {
-      await deleteMealItemAction(initialDate, slot, itemId);
+      await deleteMealItemAction(currentDate, slot, itemId);
       setDiary((prev) => {
         const next = { ...prev };
         const slotData = next[slot];
         slotData.items = slotData.items.filter((i) => i.id !== itemId);
         slotData.totalCalories = slotData.items.reduce((s, i) => s + i.calories, 0);
         slotData.totalProtein = Math.round(slotData.items.reduce((s, i) => s + i.protein, 0) * 10) / 10;
+        slotData.totalCarbs = Math.round(slotData.items.reduce((s, i) => s + i.carbs, 0) * 10) / 10;
+        slotData.totalFat = Math.round(slotData.items.reduce((s, i) => s + i.fat, 0) * 10) / 10;
         slotData.totalCostVnd = slotData.items.reduce((s, i) => s + i.priceVnd, 0);
         return next;
       });
+      setSuccessMessage("Đã xóa món ăn khỏi thực đơn.");
     } catch (err) {
       console.error(err);
     }
@@ -366,10 +460,17 @@ export function DiaryView({
                       {item.grams}g ({item.weightBasis}) • <strong>{item.calories} kcal</strong> • {item.protein}g Protein • {item.carbs}g C • {item.fat}g F
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span className="font-bold text-foreground">
                       {formatCurrencyVND(item.priceVnd)}
                     </span>
+                    <button
+                      onClick={() => handleOpenEditModal("LUNCH", item)}
+                      className="p-1 rounded text-muted-foreground hover:text-primary transition-colors"
+                      title="Chỉnh sửa lượng & giá"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleDeleteItem("LUNCH", item.id)}
                       className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
@@ -437,10 +538,17 @@ export function DiaryView({
                       {item.grams}g ({item.weightBasis}) • <strong>{item.calories} kcal</strong> • {item.protein}g Protein • {item.carbs}g C • {item.fat}g F
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span className="font-bold text-foreground">
                       {formatCurrencyVND(item.priceVnd)}
                     </span>
+                    <button
+                      onClick={() => handleOpenEditModal("DINNER", item)}
+                      className="p-1 rounded text-muted-foreground hover:text-primary transition-colors"
+                      title="Chỉnh sửa lượng & giá"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleDeleteItem("DINNER", item.id)}
                       className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
@@ -581,6 +689,194 @@ export function DiaryView({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Dialog for Editing Food Item */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-primary" />
+                  Điều Chỉnh Món Ăn ({editingItem.slot === "LUNCH" ? "Bữa Trưa" : "Bữa Tối"})
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Thay đổi khối lượng và giá tiền theo thực tế bạn ăn
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingItem(null)}
+                className="text-muted-foreground hover:text-foreground text-sm font-semibold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {(() => {
+              const currentFood = foods.find((f) => f.id === editingItem.item.foodId);
+              const edibleYield = currentFood ? currentFood.edibleYieldPercent : 100;
+              const weightBasis = currentFood ? currentFood.weightBasis : editingItem.item.weightBasis;
+              const edibleG = (editGrams * edibleYield) / 100;
+              const f = edibleG / 100;
+              const liveCal = currentFood ? Math.round(currentFood.caloriesPer100g * f) : 0;
+              const livePro = currentFood ? Math.round(currentFood.proteinPer100g * f * 10) / 10 : 0;
+              const liveCarbs = currentFood ? Math.round(currentFood.carbsPer100g * f * 10) / 10 : 0;
+              const liveFat = currentFood ? Math.round(currentFood.fatPer100g * f * 10) / 10 : 0;
+
+              return (
+                <form onSubmit={handleSaveEdit} className="space-y-4">
+                  {/* Food Info Header */}
+                  <div className="p-3.5 rounded-2xl bg-secondary/40 border border-border/60 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-sm text-foreground">{editingItem.item.foodName}</span>
+                      <p className="text-[11px] text-muted-foreground">
+                        Trạng thái cân: <span className="font-semibold text-foreground uppercase">{weightBasis}</span> • Tỷ lệ ăn được: <span className="font-semibold text-foreground">{edibleYield}%</span>
+                      </p>
+                    </div>
+                    {currentFood && (
+                      <span className="px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold text-xs border border-primary/20">
+                        {currentFood.category === "HOMEMADE_PROTEIN" ? "Đạm nhà" : "Món quán"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Portion Slider & Number Input */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-muted-foreground">
+                        Khối lượng phần ăn (gram)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        {[100, 150, 250, 350, 500].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setEditGrams(preset)}
+                            className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                              editGrams === preset
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                            }`}
+                          >
+                            {preset}g
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min={30}
+                        max={1000}
+                        step={5}
+                        value={editGrams}
+                        onChange={(e) => setEditGrams(Number(e.target.value))}
+                        className="flex-1 accent-primary h-2 bg-secondary rounded-lg cursor-pointer"
+                      />
+                      <input
+                        type="number"
+                        min={10}
+                        max={2000}
+                        value={editGrams}
+                        onChange={(e) => setEditGrams(Number(e.target.value))}
+                        className="w-24 p-2 text-center rounded-xl border border-border bg-background text-sm font-bold text-foreground"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Phần thực tế ăn được nạp vào cơ thể: <strong className="text-foreground">{Math.round(edibleG * 10) / 10}g</strong>
+                    </p>
+                  </div>
+
+                  {/* Custom Price Input */}
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                      Giá tiền bữa ăn (VND)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step={1000}
+                        min={0}
+                        value={editPrice}
+                        onChange={(e) => setEditPrice(e.target.value)}
+                        placeholder={editingItem.item.priceVnd.toString()}
+                        className="w-full p-2.5 rounded-xl border border-border bg-background text-sm font-bold text-foreground"
+                      />
+                      <span className="absolute right-3 top-2.5 text-xs text-muted-foreground font-semibold">
+                        VNĐ
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Home Prepared Toggle (For Dinner) */}
+                  {editingItem.slot === "DINNER" ? (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-secondary/50 border border-border">
+                      <input
+                        type="checkbox"
+                        id="editHomePrepared"
+                        checked={editHomePrepared}
+                        onChange={(e) => setEditHomePrepared(e.target.checked)}
+                        className="w-4 h-4 rounded text-primary"
+                      />
+                      <label htmlFor="editHomePrepared" className="text-xs text-foreground cursor-pointer">
+                        Món tự chuẩn bị / nấu tại nhà (Trứng luộc, má đùi gà luộc)
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 shrink-0" />
+                      <span>Quy tắc bữa trưa: Đi làm chỉ ăn suất quán.</span>
+                    </div>
+                  )}
+
+                  {/* Live Recalculated Macros Preview */}
+                  <div className="grid grid-cols-4 gap-2 pt-1 text-center">
+                    <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                      <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400 block">Năng lượng</span>
+                      <strong className="text-sm text-foreground">{liveCal}</strong>
+                      <span className="text-[9px] text-muted-foreground block">kcal</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 block">Đạm</span>
+                      <strong className="text-sm text-emerald-600 dark:text-emerald-400">{livePro}g</strong>
+                      <span className="text-[9px] text-muted-foreground block">protein</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20">
+                      <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 block">Tinh bột</span>
+                      <strong className="text-sm text-foreground">{liveCarbs}g</strong>
+                      <span className="text-[9px] text-muted-foreground block">carbs</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                      <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 block">Chất béo</span>
+                      <strong className="text-sm text-foreground">{liveFat}g</strong>
+                      <span className="text-[9px] text-muted-foreground block">fat</span>
+                    </div>
+                  </div>
+
+                  {/* Modal Action Buttons */}
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => setEditingItem(null)}
+                      className="px-4 py-2 rounded-xl border border-border text-xs font-medium text-muted-foreground hover:bg-accent"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isEditingSubmitting}
+                      className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-95 transition-opacity"
+                    >
+                      {isEditingSubmitting ? "Đang lưu..." : "Lưu điều chỉnh món"}
+                    </button>
+                  </div>
+                </form>
+              );
+            })()}
           </div>
         </div>
       )}

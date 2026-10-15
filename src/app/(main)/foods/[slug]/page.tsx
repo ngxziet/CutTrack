@@ -4,6 +4,7 @@ import { ArrowLeft, ShieldCheck, Scale, Info, PlusCircle } from "lucide-react";
 import { getAppState } from "@/lib/server-actions";
 import { formatCurrencyVND } from "@/lib/utils";
 import { FoodDetailScaler } from "@/components/foods/food-detail-scaler";
+import { AiFoodImageModal } from "@/components/foods/ai-food-image-modal";
 
 export default async function FoodDetailPage({
   params,
@@ -20,14 +21,15 @@ export default async function FoodDetailPage({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Back button */}
-      <div>
+      {/* Top Bar with Back and AI Image Generator */}
+      <div className="flex items-center justify-between">
         <Link
           href="/foods"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Quay lại Thư viện món ăn
         </Link>
+        <AiFoodImageModal food={food} />
       </div>
 
       {/* Hero Image 16:9 */}

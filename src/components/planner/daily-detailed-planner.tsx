@@ -23,11 +23,14 @@ import {
   ChevronRight,
   HelpCircle,
   Shuffle,
+  Edit3,
+  BookmarkCheck,
 } from "lucide-react";
 import { formatCurrencyVND } from "@/lib/utils";
 import { calculateBMR_MifflinStJeor, calculateTDEE } from "@/lib/formulas/nutrition";
 import { evaluateWeeklyProgress } from "@/lib/formulas/progress-assessment";
 import { FoodItem } from "@/lib/store/cuttrack-store";
+import { applyPlanToDiaryAction } from "@/lib/server-actions";
 
 export interface MealSlotItem {
   foodId: string;
@@ -414,6 +417,10 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
   const [currentWeekAvg, setCurrentWeekAvg] = useState<number>(67.6);
   const [showChecklist, setShowChecklist] = useState<boolean>(false);
 
+  // Apply to diary feedback
+  const [isApplyingPlan, setIsApplyingPlan] = useState<boolean>(false);
+  const [applyMessage, setApplyMessage] = useState<string | null>(null);
+
   // Recalculate BMR and TDEE dynamically
   const bmr = calculateBMR_MifflinStJeor({
     gender: "male",
@@ -436,6 +443,35 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
   const dailyCost = selectedDay.lunch.priceVnd + selectedDay.dinner.priceVnd;
   const dailyDeficit = tdee - dailyCalories;
   const proteinPerKg = Math.round((dailyProtein / currentWeightKg) * 10) / 10;
+
+  // Apply current day plan to diary
+  async function handleApplyPlanToDiary() {
+    setIsApplyingPlan(true);
+    setApplyMessage(null);
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
+
+    try {
+      await applyPlanToDiaryAction({
+        date: today,
+        lunch: {
+          foodId: selectedDay.lunch.foodId,
+          portionGrams: selectedDay.lunch.portionGrams,
+          priceVnd: selectedDay.lunch.priceVnd,
+        },
+        dinner: {
+          foodId: selectedDay.dinner.foodId,
+          portionGrams: selectedDay.dinner.portionGrams,
+          priceVnd: selectedDay.dinner.priceVnd,
+          isHomePrepared: true,
+        },
+      });
+      setApplyMessage(`Đã áp dụng thực đơn ${selectedDay.dayName} vào Nhật ký hôm nay (${today}) thành công!`);
+    } catch (err: any) {
+      setApplyMessage(err.message || "Không thể áp dụng thực đơn");
+    } finally {
+      setIsApplyingPlan(false);
+    }
+  }
 
   // Open Swap Dish Modal
   function openEditModal(slot: "LUNCH" | "DINNER") {
@@ -835,7 +871,7 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
             <p className="text-xs text-muted-foreground mt-0.5">{selectedDay.theme}</p>
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
             <div>
               <span className="text-muted-foreground block text-[10px]">Tổng Calo:</span>
               <strong className="text-sm text-foreground">{dailyCalories} kcal</strong>
@@ -848,8 +884,26 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
               <span className="text-muted-foreground block text-[10px]">Chi Phí:</span>
               <strong className="text-sm text-foreground">{formatCurrencyVND(dailyCost)}</strong>
             </div>
+
+            <button
+              onClick={handleApplyPlanToDiary}
+              disabled={isApplyingPlan}
+              className="px-3.5 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-primary/20 hover:opacity-95 transition-opacity ml-auto"
+            >
+              <BookmarkCheck className="w-4 h-4" />
+              {isApplyingPlan ? "Đang lưu vào nhật ký..." : `Áp dụng vào Nhật ký hôm nay`}
+            </button>
           </div>
         </div>
+
+        {applyMessage && (
+          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center justify-between">
+            <span>✓ {applyMessage}</span>
+            <a href="/diary" className="underline font-bold hover:opacity-80">
+              Xem Nhật ký ngay →
+            </a>
+          </div>
+        )}
 
         {/* 2 Meal Cards: Lunch & Dinner */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -862,9 +916,9 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
               </span>
               <button
                 onClick={() => openEditModal("LUNCH")}
-                className="px-2.5 py-1 rounded-lg bg-background border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-semibold hover:bg-amber-500/10 transition-colors flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded-xl bg-background border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-semibold hover:bg-amber-500/10 transition-colors flex items-center gap-1.5 shadow-sm"
               >
-                <RefreshCw className="w-3 h-3" /> Đổi món trưa
+                <Edit3 className="w-3.5 h-3.5" /> Điều chỉnh & Đổi món
               </button>
             </div>
 
@@ -903,9 +957,9 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
               </span>
               <button
                 onClick={() => openEditModal("DINNER")}
-                className="px-2.5 py-1 rounded-lg bg-background border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-500/10 transition-colors flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded-xl bg-background border border-emerald-500/30 text-emerald-900 dark:text-emerald-200 text-xs font-semibold hover:bg-emerald-500/10 transition-colors flex items-center gap-1.5 shadow-sm"
               >
-                <RefreshCw className="w-3 h-3" /> Đổi món tối
+                <Edit3 className="w-3.5 h-3.5" /> Điều chỉnh & Đổi món
               </button>
             </div>
 
@@ -1003,9 +1057,15 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-lg p-6 rounded-3xl bg-card border border-border shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="font-bold text-base text-foreground">
-                Thay Đổi Món Ăn Cho {editingSlot === "LUNCH" ? "Bữa Trưa" : "Bữa Tối"} ({selectedDay.dayName})
-              </h3>
+              <div>
+                <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-primary" />
+                  Điều Chỉnh Món Ăn Cho {editingSlot === "LUNCH" ? "Bữa Trưa" : "Bữa Tối"} ({selectedDay.dayName})
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Tùy chỉnh khẩu phần, giá tiền hoặc đổi sang món ăn khác
+                </p>
+              </div>
               <button
                 onClick={() => setEditingSlot(null)}
                 className="text-muted-foreground hover:text-foreground text-sm font-semibold"
@@ -1014,80 +1074,141 @@ export function DailyDetailedPlanner({ availableFoods }: DailyDetailedPlannerPro
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Chọn món ăn thay thế từ 15 món đã có:
-                </label>
-                <select
-                  value={selectedFoodId}
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    setSelectedFoodId(id);
-                    const food = availableFoods.find((f) => f.id === id);
-                    if (food) {
-                      setCustomGrams(food.defaultGrams);
-                      setCustomPriceVnd(food.defaultPriceVnd > 0 ? food.defaultPriceVnd : 35000);
-                    }
-                  }}
-                  className="w-full p-2.5 rounded-xl border border-border bg-background text-sm text-foreground"
-                >
-                  {availableFoods
-                    .filter((f) => (editingSlot === "LUNCH" ? f.isRestaurantFood : true))
-                    .map((food) => (
-                      <option key={food.id} value={food.id}>
-                        {food.name} ({food.caloriesPer100g} kcal/100g • {food.defaultPriceVnd > 0 ? formatCurrencyVND(food.defaultPriceVnd) : "Tự nhập giá"})
-                      </option>
-                    ))}
-                </select>
-              </div>
+            {(() => {
+              const chosenFood = availableFoods.find((f) => f.id === selectedFoodId);
+              const edibleYield = chosenFood ? chosenFood.edibleYieldPercent : 100;
+              const edibleG = (customGrams * edibleYield) / 100;
+              const factor = edibleG / 100;
+              const liveCal = chosenFood ? Math.round(chosenFood.caloriesPer100g * factor) : 0;
+              const livePro = chosenFood ? Math.round(chosenFood.proteinPer100g * factor * 10) / 10 : 0;
+              const liveCarbs = chosenFood ? Math.round(chosenFood.carbsPer100g * factor * 10) / 10 : 0;
+              const liveFat = chosenFood ? Math.round(chosenFood.fatPer100g * factor * 10) / 10 : 0;
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                    Khối lượng cả món (gram)
-                  </label>
-                  <input
-                    type="number"
-                    value={customGrams}
-                    onChange={(e) => setCustomGrams(Number(e.target.value))}
-                    min={50}
-                    max={1000}
-                    className="w-full p-2.5 rounded-xl border border-border bg-background text-sm font-bold"
-                  />
+              return (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                      Chọn món ăn ({editingSlot === "LUNCH" ? "Chỉ hiển thị món quán" : "Tất cả món"}):
+                    </label>
+                    <select
+                      value={selectedFoodId}
+                      onChange={(e) => {
+                        const id = e.target.value;
+                        setSelectedFoodId(id);
+                        const food = availableFoods.find((item) => item.id === id);
+                        if (food) {
+                          setCustomGrams(food.defaultGrams);
+                          setCustomPriceVnd(food.defaultPriceVnd > 0 ? food.defaultPriceVnd : 35000);
+                        }
+                      }}
+                      className="w-full p-2.5 rounded-xl border border-border bg-background text-sm text-foreground"
+                    >
+                      {availableFoods
+                        .filter((item) => (editingSlot === "LUNCH" ? item.isRestaurantFood : true))
+                        .map((food) => (
+                          <option key={food.id} value={food.id}>
+                            {food.name} ({food.caloriesPer100g} kcal/100g • {food.defaultPriceVnd > 0 ? formatCurrencyVND(food.defaultPriceVnd) : "Tự nhập giá"})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-muted-foreground">
+                        Khối lượng phần ăn (gram)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        {[100, 150, 250, 350, 500].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setCustomGrams(preset)}
+                            className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                              customGrams === preset
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                            }`}
+                          >
+                            {preset}g
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <input
+                          type="number"
+                          value={customGrams}
+                          onChange={(e) => setCustomGrams(Number(e.target.value))}
+                          min={50}
+                          max={1000}
+                          className="w-full p-2.5 rounded-xl border border-border bg-background text-sm font-bold"
+                        />
+                        <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                          Ăn được thực tế: <strong>{Math.round(edibleG * 10) / 10}g</strong> ({edibleYield}%)
+                        </span>
+                      </div>
+
+                      <div>
+                        <input
+                          type="number"
+                          step="1000"
+                          value={customPriceVnd}
+                          onChange={(e) => setCustomPriceVnd(Number(e.target.value))}
+                          className="w-full p-2.5 rounded-xl border border-border bg-background text-sm font-bold"
+                        />
+                        <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                          Giá tiền (VNĐ)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Recalculated Macros Preview */}
+                  <div className="grid grid-cols-4 gap-2 pt-1 text-center">
+                    <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                      <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400 block">Năng lượng</span>
+                      <strong className="text-sm text-foreground">{liveCal}</strong>
+                      <span className="text-[9px] text-muted-foreground block">kcal</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 block">Đạm</span>
+                      <strong className="text-sm text-emerald-600 dark:text-emerald-400">{livePro}g</strong>
+                      <span className="text-[9px] text-muted-foreground block">protein</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20">
+                      <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 block">Tinh bột</span>
+                      <strong className="text-sm text-foreground">{liveCarbs}g</strong>
+                      <span className="text-[9px] text-muted-foreground block">carbs</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                      <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 block">Chất béo</span>
+                      <strong className="text-sm text-foreground">{liveFat}g</strong>
+                      <span className="text-[9px] text-muted-foreground block">fat</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSlot(null)}
+                      className="px-4 py-2 rounded-xl border border-border text-xs font-medium text-muted-foreground hover:bg-accent"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveSwappedDish}
+                      className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-95 transition-opacity"
+                    >
+                      Xác nhận đổi món & Tính lại
+                    </button>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                    Giá tiền (VND)
-                  </label>
-                  <input
-                    type="number"
-                    step="1000"
-                    value={customPriceVnd}
-                    onChange={(e) => setCustomPriceVnd(Number(e.target.value))}
-                    className="w-full p-2.5 rounded-xl border border-border bg-background text-sm font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <button
-                  type="button"
-                  onClick={() => setEditingSlot(null)}
-                  className="px-4 py-2 rounded-xl border border-border text-xs font-medium text-muted-foreground hover:bg-accent"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveSwappedDish}
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-95 transition-opacity"
-                >
-                  Xác nhận đổi món & Tính lại
-                </button>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, CheckCircle2 } from "lucide-react";
+import { PlusCircle, CheckCircle2, DollarSign } from "lucide-react";
 import { FoodItem } from "@/lib/store/cuttrack-store";
 import { addFoodToMealAction } from "@/lib/server-actions";
 
@@ -10,8 +10,10 @@ export function FoodDetailScaler({ food }: { food: FoodItem }) {
   const router = useRouter();
   const [grams, setGrams] = useState<number>(food.defaultGrams);
   const [targetSlot, setTargetSlot] = useState<"LUNCH" | "DINNER">("LUNCH");
+  const [priceVnd, setPriceVnd] = useState<number>(food.defaultPriceVnd > 0 ? food.defaultPriceVnd : 30000);
   const [isAdding, setIsAdding] = useState(false);
   const [success, setSuccess] = useState(false);
+  const isAddingRef = useRef(false);
 
   const edibleGrams = (grams * food.edibleYieldPercent) / 100;
   const factor = edibleGrams / 100;
@@ -22,9 +24,12 @@ export function FoodDetailScaler({ food }: { food: FoodItem }) {
   const currentFat = Math.round(food.fatPer100g * factor * 10) / 10;
 
   async function handleQuickAdd() {
+    if (isAddingRef.current) return;
+    isAddingRef.current = true;
     setIsAdding(true);
     setSuccess(false);
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
+    const clientReqId = `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
 
     try {
       await addFoodToMealAction({
@@ -32,16 +37,17 @@ export function FoodDetailScaler({ food }: { food: FoodItem }) {
         slot: targetSlot,
         foodId: food.id,
         grams: Number(grams),
-        customPriceVnd: food.defaultPriceVnd,
+        customPriceVnd: Number(priceVnd),
         isHomePrepared: targetSlot === "DINNER" && food.category === "HOMEMADE_PROTEIN",
+        clientRequestId: clientReqId,
       });
       setSuccess(true);
       setTimeout(() => {
         router.push("/diary");
-      }, 1000);
+      }, 800);
     } catch (err: any) {
       alert(err.message || "Không thể thêm món");
-    } finally {
+      isAddingRef.current = false;
       setIsAdding(false);
     }
   }
@@ -119,11 +125,12 @@ export function FoodDetailScaler({ food }: { food: FoodItem }) {
       </div>
 
       {/* Quick Add to Meal Action */}
-      <div className="p-4 rounded-2xl bg-secondary/50 border border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <span className="text-xs font-bold text-foreground shrink-0">Thêm vào:</span>
+      <div className="p-4 rounded-2xl bg-secondary/50 border border-border flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-foreground shrink-0">Thêm vào:</span>
             <button
+              type="button"
               onClick={() => setTargetSlot("LUNCH")}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
                 targetSlot === "LUNCH"
@@ -134,6 +141,7 @@ export function FoodDetailScaler({ food }: { food: FoodItem }) {
               Bữa Trưa (Quán)
             </button>
             <button
+              type="button"
               onClick={() => setTargetSlot("DINNER")}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
                 targetSlot === "DINNER"
@@ -144,12 +152,26 @@ export function FoodDetailScaler({ food }: { food: FoodItem }) {
               Bữa Tối
             </button>
           </div>
+
+          <div className="flex items-center gap-1.5 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+            <span className="text-xs text-muted-foreground font-medium">Giá:</span>
+            <input
+              type="number"
+              step={1000}
+              min={0}
+              value={priceVnd}
+              onChange={(e) => setPriceVnd(Number(e.target.value))}
+              className="w-20 bg-transparent text-xs font-bold text-foreground focus:outline-none"
+            />
+            <span className="text-[11px] text-muted-foreground font-semibold">VNĐ</span>
+          </div>
         </div>
 
         <button
+          type="button"
           onClick={handleQuickAdd}
           disabled={isAdding}
-          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-2 hover:opacity-95 shadow-md shadow-primary/20"
+          className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-2 hover:opacity-95 shadow-md shadow-primary/20 shrink-0"
         >
           {success ? (
             <>
