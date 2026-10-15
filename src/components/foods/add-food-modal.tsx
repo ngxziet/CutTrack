@@ -24,6 +24,7 @@ export function AddFoodModal() {
   const [defaultPriceVnd, setDefaultPriceVnd] = useState<number>(35000);
   const [confidenceNote, setConfidenceNote] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [aiSource, setAiSource] = useState<"GEMINI_CLOUD" | "EXPERT_KNOWLEDGE_ENGINE" | null>(null);
 
   async function handleAiEstimate() {
     if (!name.trim()) {
@@ -48,6 +49,7 @@ export function AddFoodModal() {
       }
 
       const d = json.data;
+      setAiSource(d.aiSource);
       if (d.category) setCategory(d.category);
       if (d.defaultGrams) setDefaultGrams(d.defaultGrams);
       if (d.edibleYieldPercent) setEdibleYieldPercent(d.edibleYieldPercent);
@@ -61,11 +63,11 @@ export function AddFoodModal() {
 
       setAiSuccessMessage(
         d.aiSource === "GEMINI_CLOUD"
-          ? "✨ AI Gemini đã phân tích định lượng thành công!"
-          : "✨ Chuyên gia dinh dưỡng CutTrack đã tính toán định lượng thành công!"
+          ? "🟢 Đã kết nối và phân tích thành công bởi Google Gemini Flash AI!"
+          : "⚡ Đã tính toán thành công bởi Bộ quy tắc Dinh dưỡng Quốc gia (NIN)! (Thêm GEMINI_API_KEY vào .env để gọi trực tiếp Gemini Cloud AI)"
       );
 
-      setTimeout(() => setAiSuccessMessage(""), 4000);
+      setTimeout(() => setAiSuccessMessage(""), 6000);
     } catch (err: any) {
       setErrorMessage(err.message || "Lỗi khi gọi AI phân tích món ăn.");
     } finally {
@@ -164,6 +166,22 @@ export function AddFoodModal() {
                 <span>{aiSuccessMessage}</span>
               </div>
             )}
+
+            {/* Engine Information Banner */}
+            <div className="p-3.5 rounded-2xl bg-secondary/40 border border-border text-xs flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div className="space-y-1 text-muted-foreground text-[11px] leading-relaxed">
+                <span className="font-bold text-foreground block text-xs">
+                  Cơ chế hoạt động của nút "AI Điền Tự Động":
+                </span>
+                <p>
+                  • <strong className="text-foreground">Google Gemini 2.0 / 1.5 Flash (AI Thật)</strong>: Tự động kích hoạt khi bạn cấu hình <code>GEMINI_API_KEY</code> trong file <code>.env</code> (lấy miễn phí tại Google AI Studio).
+                </p>
+                <p>
+                  • <strong className="text-foreground">Bộ Quy Tắc Dinh Dưỡng Viện NIN (Cục Bộ)</strong>: Khi chưa có API Key, hệ thống tự động bóc tách nguyên liệu (xương/thịt/tinh bột) và tính calo chuẩn theo Viện Dinh Dưỡng Quốc Gia, <em>hoàn toàn không phải random số ngẫu nhiên</em>.
+                </p>
+              </div>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Dish Name & AI Action Bar */}
