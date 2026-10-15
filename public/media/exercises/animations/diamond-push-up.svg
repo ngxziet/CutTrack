@@ -130,36 +130,46 @@
   <!-- Animated Biomechanical Figure -->
   <g id="animatedFigure">
     
-        <!-- Bench / Floor line -->
-        <line x1="160" y1="470" x2="600" y2="470" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-        <line x1="200" y1="470" x2="560" y2="470" stroke="#64748b" stroke-width="2" stroke-dasharray="8 8"/>
+        <!-- Isometric High-Density Rubber Gym Mat -->
+        <polygon points="140,490 660,490 620,440 180,440" fill="#0b1120" stroke="#1e293b" stroke-width="2"/>
+        <line x1="180" y1="485" x2="620" y2="485" stroke="#38bdf8" stroke-width="2" opacity="0.6"/>
         
         <g class="anim-pushup">
-          <!-- Feet contact -->
-          <circle cx="240" cy="462" r="8" fill="#64748b"/>
+          <!-- Athletic Sneaker Contact -->
+          <ellipse cx="240" cy="462" rx="14" ry="6" fill="#ef4444"/>
+          <rect x="235" y="456" width="16" height="4" rx="2" fill="#ffffff"/>
           
-          <!-- Torso & Legs line (Rigid Plank) -->
-          <line x1="245" y1="455" x2="480" y2="370" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
-          <line x1="245" y1="455" x2="480" y2="370" stroke="#818cf8" stroke-width="4" stroke-linecap="round"/>
+          <!-- Neutral Spine Laser Alignment Guide -->
+          <line x1="230" y1="462" x2="540" y2="344" stroke="#10b981" stroke-width="2" stroke-dasharray="6 6" opacity="0.8"/>
           
-          <!-- Muscle Target Highlight (Chest & Triceps) -->
-          <ellipse cx="450" cy="380" rx="24" ry="14" fill="#818cf8" opacity="0.6"/>
+          <!-- Muscular Legs & Quadriceps -->
+          <path d="M 245 455 Q 300 435 360 410 L 355 395 Q 290 420 245 445 Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
           
-          <!-- Arms -->
+          <!-- Athletic Training Shorts -->
+          <path d="M 350 415 L 415 380 L 405 360 L 345 390 Z" fill="#0f766e" stroke="#14b8a6" stroke-width="2"/>
+          
+          <!-- Muscular Torso & Sculpted Chest -->
+          <path d="M 405 375 Q 445 355 480 345 L 470 325 Q 430 340 395 355 Z" fill="#334155" stroke="#64748b" stroke-width="2"/>
+          <line x1="420" y1="368" x2="435" y2="358" stroke="#475569" stroke-width="2"/>
+          
+          <!-- Muscle Target Highlight (Chest & Triceps Heatmap) -->
+          <ellipse cx="455" cy="350" rx="28" ry="16" fill="#818cf8" opacity="0.75" class="anim-pulse"/>
+          
+          <!-- Arm & Deltoid Cap -->
           <g class="anim-arms">
-            <polyline points="480,375 470,420 475,466" fill="none" stroke="#f8fafc" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-            <polyline points="480,375 470,420 475,466" fill="none" stroke="#818cf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Shoulder Cap -->
+            <circle cx="475" cy="350" r="12" fill="#475569" stroke="#64748b" stroke-width="2"/>
+            <!-- Bicep/Tricep & Forearm -->
+            <polyline points="475,355 460,405 475,465" fill="none" stroke="#f8fafc" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="475,355 460,405 475,465" fill="none" stroke="#818cf8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
           
-          <!-- Hands on ground -->
-          <ellipse cx="475" cy="466" rx="14" ry="6" fill="#0284c7"/>
+          <!-- Hands on Mat -->
+          <ellipse cx="475" cy="466" rx="15" ry="6" fill="#0284c7"/>
           
-          <!-- Head -->
+          <!-- Head with Athletic Headband -->
           <circle cx="520" cy="354" r="18" fill="#f8fafc"/>
-          <circle cx="520" cy="354" r="14" fill="#334155"/>
-          
-          <!-- Neutral Spine Guideline -->
-          <line x1="230" y1="462" x2="540" y2="344" stroke="#10b981" stroke-width="2" stroke-dasharray="6 6" opacity="0.7"/>
+          <rect x="508" y="350" width="22" height="5" rx="2" fill="#0284c7"/>
         </g>
       
   </g>

@@ -6,17 +6,17 @@ import {
   LayoutDashboard,
   UtensilsCrossed,
   Dumbbell,
-  Wallet,
-  Menu,
+  BookOpen,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mobileItems = [
   { name: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
   { name: "Nhật ký", href: "/diary", icon: UtensilsCrossed },
-  { name: "Tập luyện", href: "/workouts", icon: Dumbbell },
-  { name: "Chi phí", href: "/budget", icon: Wallet },
-  { name: "Khám phá", href: "/learn", icon: Menu },
+  { name: "Thực đơn", href: "/meal-planner", icon: CalendarDays },
+  { name: "Món ăn", href: "/foods", icon: BookOpen },
+  { name: "Bài tập", href: "/exercises", icon: Dumbbell },
 ];
 
 export function MobileBottomNav() {

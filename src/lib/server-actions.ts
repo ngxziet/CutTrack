@@ -9,6 +9,7 @@ import {
   WorkoutSessionData,
   WeightEntry,
   UserProfileState,
+  ExerciseConfig,
 } from "./store/cuttrack-store";
 import {
   REFERENCE_BMR_KCAL,
@@ -221,3 +222,52 @@ export async function updateProfileGoalsAction(goals: Partial<UserProfileState>)
   revalidatePath("/dashboard");
   return { success: true, profile: state.profile };
 }
+
+export async function saveExerciseConfigAction(slug: string, config: ExerciseConfig) {
+  const state = loadCutTrackState();
+  if (!state.exerciseConfigs) {
+    state.exerciseConfigs = {};
+  }
+  state.exerciseConfigs[slug] = config;
+  saveCutTrackState(state);
+  revalidatePath("/exercises");
+  revalidatePath(`/exercises/${slug}`);
+  return { success: true, config };
+}
+
+export async function getMealHistoryAction() {
+  const state = loadCutTrackState();
+  const dates = Object.keys(state.diary).sort((a, b) => b.localeCompare(a));
+  const history = dates.map((date) => {
+    const day = state.diary[date];
+    const totalCalories = day.LUNCH.totalCalories + day.DINNER.totalCalories;
+    const totalProtein = Math.round((day.LUNCH.totalProtein + day.DINNER.totalProtein) * 10) / 10;
+    const totalCostVnd = day.LUNCH.totalCostVnd + day.DINNER.totalCostVnd;
+    const lunchItems = day.LUNCH.items.map((i) => i.foodName);
+    const dinnerItems = day.DINNER.items.map((i) => i.foodName);
+
+    let status: "EXCELLENT" | "DEFICIT_SAFE" | "OVER_CALORIES" | "EMPTY" = "DEFICIT_SAFE";
+    if (totalCalories === 0) {
+      status = "EMPTY";
+    } else if (totalCalories > state.profile.safeMaxCalories) {
+      status = "OVER_CALORIES";
+    } else if (totalProtein >= 70 && totalCostVnd <= state.profile.dailyBudgetVnd) {
+      status = "EXCELLENT";
+    }
+
+    return {
+      date,
+      totalCalories,
+      totalProtein,
+      totalCostVnd,
+      lunchItems,
+      dinnerItems,
+      lunchCost: day.LUNCH.totalCostVnd,
+      dinnerCost: day.DINNER.totalCostVnd,
+      status,
+    };
+  });
+
+  return { success: true, history };
+}
+

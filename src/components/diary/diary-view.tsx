@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   UtensilsCrossed,
   Plus,
@@ -12,6 +13,13 @@ import {
   Flame,
   Wallet,
   ShieldAlert,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  History,
+  Clock,
+  ArrowRight,
+  TrendingDown,
 } from "lucide-react";
 import { FoodItem, MealSlotData } from "@/lib/store/cuttrack-store";
 import { addFoodToMealAction, deleteMealItemAction, copyYesterdayMealAction } from "@/lib/server-actions";
@@ -19,7 +27,9 @@ import { formatCurrencyVND } from "@/lib/utils";
 
 interface DiaryViewProps {
   initialDate: string;
+  todayDate: string;
   initialDiary: { LUNCH: MealSlotData; DINNER: MealSlotData };
+  allDiaryDates?: Record<string, { LUNCH: MealSlotData; DINNER: MealSlotData }>;
   foods: FoodItem[];
   dailyBudgetVnd: number;
   dailyTargetCalories: number;
@@ -27,11 +37,17 @@ interface DiaryViewProps {
 
 export function DiaryView({
   initialDate,
+  todayDate,
   initialDiary,
+  allDiaryDates = {},
   foods,
   dailyBudgetVnd,
   dailyTargetCalories,
 }: DiaryViewProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [currentDate, setCurrentDate] = useState(initialDate);
+  const [activeTab, setActiveTab] = useState<"LOG" | "HISTORY">("LOG");
   const [diary, setDiary] = useState(initialDiary);
   const [selectedSlot, setSelectedSlot] = useState<"LUNCH" | "DINNER" | null>(null);
   const [selectedFoodId, setSelectedFoodId] = useState<string>(foods[0]?.id || "");
@@ -41,6 +57,47 @@ export function DiaryView({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Helper to change date
+  function handleDateChange(newDate: string) {
+    setCurrentDate(newDate);
+    if (allDiaryDates[newDate]) {
+      setDiary(allDiaryDates[newDate]);
+    } else {
+      setDiary({
+        LUNCH: {
+          slot: "LUNCH",
+          slotName: "Bữa trưa (Suất quán)",
+          items: [],
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          totalCostVnd: 0,
+        },
+        DINNER: {
+          slot: "DINNER",
+          slotName: "Bữa tối (Thêm trứng/gà tại nhà)",
+          items: [],
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          totalCostVnd: 0,
+        },
+      });
+    }
+    startTransition(() => {
+      router.push(`/diary?date=${newDate}`);
+    });
+  }
+
+  function shiftDate(offsetDays: number) {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() + offsetDays);
+    const newStr = d.toISOString().split("T")[0];
+    handleDateChange(newStr);
+  }
 
   const selectedFood = foods.find((f) => f.id === selectedFoodId);
 
@@ -117,35 +174,109 @@ export function DiaryView({
     setErrorMessage(null);
     setSuccessMessage(null);
     try {
-      await copyYesterdayMealAction(initialDate);
+      await copyYesterdayMealAction(currentDate);
       window.location.reload();
     } catch (err: any) {
       setErrorMessage(err.message || "Không thể sao chép bữa hôm qua");
     }
   }
 
+  // Calculate history entries
+  const historyDates = Object.keys(allDiaryDates).sort((a, b) => b.localeCompare(a));
+  const hasHistory = historyDates.length > 0;
+
   return (
     <div className="space-y-6">
-      {/* Top Header & Copy Yesterday */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <UtensilsCrossed className="w-6 h-6 text-primary" />
-            Nhật Ký Ăn Uống — 2 Bữa Mặc Định
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Ngày: <span className="font-semibold text-foreground">{initialDate}</span> • Quy tắc nghiêm ngặt: Trưa ăn quán 1 phần, tối được thêm trứng/gà luộc.
-          </p>
+      {/* Main Mode Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab("LOG")}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
+              activeTab === "LOG"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <UtensilsCrossed className="w-4 h-4" />
+            Nhật Ký Hôm Nay / Theo Ngày
+          </button>
+          <button
+            onClick={() => setActiveTab("HISTORY")}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
+              activeTab === "HISTORY"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <History className="w-4 h-4" />
+            Lịch Sử Ăn Uống
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-background/80 font-bold border border-border">
+              {historyDates.length}
+            </span>
+          </button>
         </div>
 
-        <button
-          onClick={handleCopyYesterday}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-accent text-foreground text-sm font-medium transition-colors"
-        >
-          <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          Sao chép bữa hôm qua
-        </button>
+        {activeTab === "LOG" && (
+          <button
+            onClick={handleCopyYesterday}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-foreground text-xs font-semibold transition-colors"
+          >
+            <Copy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            Sao chép bữa hôm qua
+          </button>
+        )}
       </div>
+
+      {/* Date Navigation Bar (Visible in LOG tab) */}
+      {activeTab === "LOG" && (
+        <div className="p-3.5 rounded-2xl border border-border bg-card flex flex-wrap items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => shiftDate(-1)}
+              className="p-1.5 rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              title="Ngày trước đó"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 border border-border text-sm font-medium">
+              <Calendar className="w-4 h-4 text-primary" />
+              <input
+                type="date"
+                value={currentDate}
+                onChange={(e) => e.target.value && handleDateChange(e.target.value)}
+                className="bg-transparent text-foreground font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer"
+              />
+            </div>
+            <button
+              onClick={() => shiftDate(1)}
+              className="p-1.5 rounded-lg border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              title="Ngày tiếp theo"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {currentDate === todayDate ? (
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Hôm nay (Bắt đầu theo dõi)
+              </span>
+            ) : (
+              <button
+                onClick={() => handleDateChange(todayDate)}
+                className="px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary hover:bg-accent text-foreground border border-border transition-colors"
+              >
+                Về hôm nay ({todayDate})
+              </button>
+            )}
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Trưa chỉ ăn quán 1 phần • Tối tự làm thêm đạm
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       {errorMessage && (
@@ -161,33 +292,36 @@ export function DiaryView({
         </div>
       )}
 
-      {/* Summary Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl border border-border bg-card">
-        <div>
-          <span className="text-xs text-muted-foreground">Tổng calo nạp</span>
-          <p className="text-xl font-extrabold text-foreground">
-            {totalCalories} <span className="text-xs font-normal text-muted-foreground">/ {dailyTargetCalories} kcal</span>
-          </p>
-        </div>
-        <div>
-          <span className="text-xs text-muted-foreground">Tổng đạm (Protein)</span>
-          <p className="text-xl font-extrabold text-foreground">
-            {totalProtein}g
-          </p>
-        </div>
-        <div>
-          <span className="text-xs text-muted-foreground">Tổng chi phí</span>
-          <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-            {formatCurrencyVND(totalCost)}
-          </p>
-        </div>
-        <div>
-          <span className="text-xs text-muted-foreground">Ngân sách còn lại</span>
-          <p className="text-xl font-extrabold text-foreground">
-            {formatCurrencyVND(Math.max(0, dailyBudgetVnd - totalCost))}
-          </p>
-        </div>
-      </div>
+      {/* VIEW 1: ACTIVE DAY LOG */}
+      {activeTab === "LOG" && (
+        <>
+          {/* Summary Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl border border-border bg-card">
+            <div>
+              <span className="text-xs text-muted-foreground">Tổng calo nạp</span>
+              <p className="text-xl font-extrabold text-foreground">
+                {totalCalories} <span className="text-xs font-normal text-muted-foreground">/ {dailyTargetCalories} kcal</span>
+              </p>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Tổng đạm (Protein)</span>
+              <p className="text-xl font-extrabold text-foreground">
+                {totalProtein}g
+              </p>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Tổng chi phí</span>
+              <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                {formatCurrencyVND(totalCost)}
+              </p>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Ngân sách còn lại</span>
+              <p className="text-xl font-extrabold text-foreground">
+                {formatCurrencyVND(Math.max(0, dailyBudgetVnd - totalCost))}
+              </p>
+            </div>
+          </div>
 
       {/* 2 Meal Slots */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -447,6 +581,208 @@ export function DiaryView({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+        </>
+      )}
+
+      {/* VIEW 2: MEAL HISTORY ARCHIVE */}
+      {activeTab === "HISTORY" && (
+        <div className="space-y-6">
+          {/* History Header & Summary Stats */}
+          <div className="p-5 rounded-2xl border border-border bg-card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  Kho Lịch Sử Ăn Uống — Bắt Đầu Từ Hôm Nay ({todayDate})
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Theo dõi sự kiên trì từng ngày. Đảm bảo thâm hụt calo chuẩn và không vượt ngân sách 70k - 80k VNĐ.
+                </p>
+              </div>
+              <span className="self-start sm:self-auto px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                Đã ghi chép: {historyDates.length} ngày
+              </span>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border">
+              <div className="p-3 rounded-xl bg-secondary/40 border border-border/60">
+                <span className="text-[11px] text-muted-foreground font-medium">Trung bình Calo nạp</span>
+                <p className="text-lg font-extrabold text-foreground mt-0.5">
+                  {Math.round(
+                    historyDates.reduce(
+                      (acc, d) =>
+                        acc +
+                        (allDiaryDates[d]?.LUNCH?.totalCalories || 0) +
+                        (allDiaryDates[d]?.DINNER?.totalCalories || 0),
+                      0
+                    ) / Math.max(1, historyDates.length)
+                  )}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">kcal/ngày</span>
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-secondary/40 border border-border/60">
+                <span className="text-[11px] text-muted-foreground font-medium">Trung bình Đạm nạp</span>
+                <p className="text-lg font-extrabold text-foreground mt-0.5">
+                  {Math.round(
+                    historyDates.reduce(
+                      (acc, d) =>
+                        acc +
+                        (allDiaryDates[d]?.LUNCH?.totalProtein || 0) +
+                        (allDiaryDates[d]?.DINNER?.totalProtein || 0),
+                      0
+                    ) / Math.max(1, historyDates.length)
+                  )}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">g/ngày</span>
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-secondary/40 border border-border/60">
+                <span className="text-[11px] text-muted-foreground font-medium">Trung bình Chi phí</span>
+                <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {formatCurrencyVND(
+                    Math.round(
+                      historyDates.reduce(
+                        (acc, d) =>
+                          acc +
+                          (allDiaryDates[d]?.LUNCH?.totalCostVnd || 0) +
+                          (allDiaryDates[d]?.DINNER?.totalCostVnd || 0),
+                        0
+                      ) / Math.max(1, historyDates.length)
+                    )
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Day Cards Timeline */}
+          <div className="space-y-4">
+            {historyDates.map((dateStr) => {
+              const dayData = allDiaryDates[dateStr];
+              if (!dayData) return null;
+
+              const dayCalories = (dayData.LUNCH?.totalCalories || 0) + (dayData.DINNER?.totalCalories || 0);
+              const dayProtein = Math.round(((dayData.LUNCH?.totalProtein || 0) + (dayData.DINNER?.totalProtein || 0)) * 10) / 10;
+              const dayCost = (dayData.LUNCH?.totalCostVnd || 0) + (dayData.DINNER?.totalCostVnd || 0);
+              const isToday = dateStr === todayDate;
+
+              return (
+                <div
+                  key={dateStr}
+                  className={`p-5 rounded-2xl border transition-all ${
+                    isToday
+                      ? "border-primary/50 bg-card shadow-sm ring-1 ring-primary/20"
+                      : "border-border bg-card/70 hover:border-border/80"
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-border">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs">
+                        {dateStr.slice(8, 10)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-base text-foreground">
+                            Ngày {dateStr}
+                          </h3>
+                          {isToday && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              Hôm nay
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {isToday ? "Bắt đầu chu trình theo dõi chính thức" : "Nhật ký lưu trữ"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {/* Calorie Status */}
+                      <span
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          dayCalories <= dailyTargetCalories
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                            : "bg-destructive/10 text-destructive border border-destructive/20"
+                        }`}
+                      >
+                        {dayCalories} / {dailyTargetCalories} kcal
+                      </span>
+
+                      {/* Cost Status */}
+                      <span
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          dayCost <= dailyBudgetVnd
+                            ? "bg-secondary text-foreground border border-border"
+                            : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                        }`}
+                      >
+                        {formatCurrencyVND(dayCost)}
+                      </span>
+
+                      {/* Jump to day button */}
+                      <button
+                        onClick={() => {
+                          handleDateChange(dateStr);
+                          setActiveTab("LOG");
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-95 transition-opacity flex items-center gap-1 shrink-0"
+                      >
+                        Chi tiết <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Meals Breakdown for this Day */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
+                    {/* Lunch */}
+                    <div className="p-3 rounded-xl bg-secondary/30 border border-border/50 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between font-semibold text-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          Trưa quán ({dayData.LUNCH?.items.length || 0} món):
+                        </span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                          {formatCurrencyVND(dayData.LUNCH?.totalCostVnd || 0)}
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground text-[11px]">
+                        {dayData.LUNCH?.items.length > 0 ? (
+                          dayData.LUNCH.items.map((i) => i.foodName).join(", ")
+                        ) : (
+                          <span className="italic">Chưa có món</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dinner */}
+                    <div className="p-3 rounded-xl bg-secondary/30 border border-border/50 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between font-semibold text-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          Tối nhà ({dayData.DINNER?.items.length || 0} món):
+                        </span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                          {formatCurrencyVND(dayData.DINNER?.totalCostVnd || 0)}
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground text-[11px]">
+                        {dayData.DINNER?.items.length > 0 ? (
+                          dayData.DINNER.items.map((i) => i.foodName).join(", ")
+                        ) : (
+                          <span className="italic">Chưa có món</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, AlertTriangle, Wind, Target, Dumbbell } from "lucide-react";
 import { BiomechanicalMotionEngine } from "@/components/exercises/biomechanical-motion-engine";
+import { getAppState } from "@/lib/server-actions";
 
 const exerciseDetails: Record<
   string,
@@ -142,6 +143,8 @@ export default async function ExerciseDetailPage({
 
   const posterUrl = `/media/exercises/posters/${slug}.svg`;
   const animationUrl = `/media/exercises/animations/${slug}.svg`;
+  const state = await getAppState();
+  const userConfig = state.exerciseConfigs?.[slug];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -155,12 +158,13 @@ export default async function ExerciseDetailPage({
         </Link>
       </div>
 
-      {/* Video / Animation Player */}
+      {/* Video / Animation Player with Configurator */}
       <BiomechanicalMotionEngine
         exerciseSlug={slug}
         exerciseName={detail.name}
         animationUrl={animationUrl}
         posterUrl={posterUrl}
+        initialConfig={userConfig}
       />
 
       {/* Title & Muscle targets */}

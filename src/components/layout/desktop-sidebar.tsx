@@ -17,17 +17,49 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navigationItems = [
-  { name: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Nhật ký ăn uống", href: "/diary", icon: UtensilsCrossed },
-  { name: "Thư viện món ăn", href: "/foods", icon: BookOpen },
-  { name: "Kế hoạch 7 ngày", href: "/meal-planner", icon: CalendarDays },
-  { name: "Ngân sách (VND)", href: "/budget", icon: Wallet },
-  { name: "Thư viện bài tập", href: "/exercises", icon: Dumbbell },
-  { name: "Ghi chép tập luyện", href: "/workouts", icon: ClipboardList },
-  { name: "Tiến độ cơ thể", href: "/progress", icon: TrendingUp },
-  { name: "Kiến thức khoa học", href: "/learn", icon: GraduationCap },
-  { name: "Cài đặt & Mục tiêu", href: "/settings", icon: Settings },
+interface NavigationGroup {
+  title: string;
+  badge?: string;
+  items: {
+    name: string;
+    href: string;
+    icon: any;
+    badge?: string;
+  }[];
+}
+
+const navigationGroups: NavigationGroup[] = [
+  {
+    title: "Theo Dõi Hằng Ngày",
+    items: [
+      { name: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Nhật ký & Lịch sử", href: "/diary", icon: UtensilsCrossed, badge: "2 Bữa" },
+      { name: "Thực đơn 7 ngày", href: "/meal-planner", icon: CalendarDays },
+      { name: "Ghi nhận buổi tập", href: "/workouts", icon: ClipboardList },
+    ],
+  },
+  {
+    title: "Thư Viện & Cấu Hình",
+    badge: "Mới",
+    items: [
+      { name: "Thư viện món ăn", href: "/foods", icon: BookOpen, badge: "15 món" },
+      { name: "Thư viện bài tập & Cấu hình", href: "/exercises", icon: Dumbbell, badge: "60 FPS" },
+    ],
+  },
+  {
+    title: "Chỉ Số & Ngân Sách",
+    items: [
+      { name: "Ngân sách chi tiêu", href: "/budget", icon: Wallet, badge: "70k-80k" },
+      { name: "Tiến độ cơ thể", href: "/progress", icon: TrendingUp },
+    ],
+  },
+  {
+    title: "Hệ Thống & Tri Thức",
+    items: [
+      { name: "Kiến thức khoa học", href: "/learn", icon: GraduationCap },
+      { name: "Cài đặt & An toàn", href: "/settings", icon: Settings },
+    ],
+  },
 ];
 
 export function DesktopSidebar() {
@@ -50,33 +82,63 @@ export function DesktopSidebar() {
         </div>
       </div>
 
-      {/* Navigation items */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navigationItems.map((item) => {
-          const isActive =
-            pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-semibold"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      {/* Grouped Navigation items */}
+      <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
+        {navigationGroups.map((group) => (
+          <div key={group.title} className="space-y-1">
+            <div className="px-3 pb-1 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
+              <span>{group.title}</span>
+              {group.badge && (
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20">
+                  {group.badge}
+                </span>
               )}
-            >
-              <Icon className={cn("w-4 h-4", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
-              {item.name}
-            </Link>
-          );
-        })}
+            </div>
+
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive =
+                  pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 group",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-semibold"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+                      <span className="truncate">{item.name}</span>
+                    </div>
+
+                    {item.badge && (
+                      <span
+                        className={cn(
+                          "px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0",
+                          isActive
+                            ? "bg-primary-foreground/20 text-primary-foreground"
+                            : "bg-secondary text-muted-foreground"
+                        )}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Target status snippet */}
-      <div className="p-4 m-3 rounded-xl bg-secondary/50 border border-border text-xs space-y-1.5">
+      <div className="p-3.5 m-3 rounded-xl bg-secondary/50 border border-border text-xs space-y-1.5">
         <div className="flex justify-between items-center text-muted-foreground">
           <span>Mục tiêu</span>
           <span className="font-semibold text-foreground">68kg → 62kg</span>

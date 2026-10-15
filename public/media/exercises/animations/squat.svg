@@ -130,35 +130,41 @@
   <!-- Animated Biomechanical Figure -->
   <g id="animatedFigure">
     
-        <!-- Floor line -->
-        <line x1="240" y1="510" x2="560" y2="510" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        <!-- Perspective Floor & Platform -->
+        <polygon points="200,525 600,525 560,480 240,480" fill="#0b1120" stroke="#1e293b" stroke-width="2"/>
+        <line x1="240" y1="520" x2="560" y2="520" stroke="#10b981" stroke-width="2" opacity="0.6"/>
         
         <g class="anim-squat">
-          <!-- Head -->
+          <!-- Head with Headband -->
           <circle cx="400" cy="280" r="20" fill="#f8fafc"/>
-          <circle cx="400" cy="280" r="15" fill="#334155"/>
+          <rect x="388" y="274" width="24" height="6" rx="2" fill="#f59e0b"/>
           
-          <!-- Torso (Upright spine) -->
-          <line x1="400" y1="300" x2="385" y2="380" stroke="#f8fafc" stroke-width="14" stroke-linecap="round"/>
+          <!-- Upright Muscular Torso & Tank Top -->
+          <path d="M 380 300 L 420 300 L 415 365 L 375 365 Z" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
           
-          <!-- Glutes & Quads Highlight -->
-          <circle cx="380" cy="385" r="22" fill="#10b981" opacity="0.6"/>
+          <!-- Athletic Shorts -->
+          <path d="M 370 365 L 425 365 L 440 405 L 355 405 Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+          
+          <!-- Glutes & Quads Heatmap -->
+          <ellipse cx="400" cy="395" rx="32" ry="20" fill="#10b981" opacity="0.8" class="anim-pulse"/>
           
           <!-- Thighs (Parallel) -->
-          <line x1="385" y1="380" x2="445" y2="390" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
-          <line x1="385" y1="380" x2="445" y2="390" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+          <line x1="385" y1="395" x2="450" y2="400" stroke="#f8fafc" stroke-width="14" stroke-linecap="round"/>
+          <line x1="385" y1="395" x2="450" y2="400" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
           
-          <!-- Shins / Calves -->
-          <line x1="445" y1="390" x2="440" y2="505" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/>
+          <!-- Calves & Shins -->
+          <line x1="450" y1="400" x2="445" y2="505" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
           
-          <!-- Feet -->
-          <ellipse cx="450" cy="507" rx="22" ry="7" fill="#64748b"/>
+          <!-- Cross-training Sneaker -->
+          <ellipse cx="452" cy="507" rx="22" ry="7" fill="#ef4444"/>
+          <rect x="442" y="503" width="18" height="4" rx="2" fill="#ffffff"/>
           
-          <!-- Arms extended forward for counter-balance -->
-          <line x1="400" y1="315" x2="470" y2="320" stroke="#94a3b8" stroke-width="8" stroke-linecap="round"/>
+          <!-- Arms extended forward for balance -->
+          <line x1="410" y1="315" x2="480" y2="320" stroke="#cbd5e1" strokeWidth="10" strokeLinecap="round"/>
           
           <!-- 90 deg knee indicator -->
-          <path d="M 425 390 L 445 390 L 445 410" fill="none" stroke="#f59e0b" stroke-width="2"/>
+          <path d="M 430 400 L 450 400 L 450 420" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="458" y="418" fill="#f59e0b" font-size="11" font-weight="bold">90°</text>
         </g>
       
   </g>

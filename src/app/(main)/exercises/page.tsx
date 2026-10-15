@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Dumbbell, ArrowRight, Activity, Flame, ShieldAlert } from "lucide-react";
+import { getAppState } from "@/lib/server-actions";
+import { ExercisesCatalogView } from "@/components/exercises/exercises-catalog-view";
 
 const exercisesList = [
   {
@@ -114,78 +116,13 @@ const exercisesList = [
   },
 ];
 
-export default function ExercisesPage() {
+export default async function ExercisesPage() {
+  const state = await getAppState();
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <Dumbbell className="w-6 h-6 text-primary" />
-          Thư Viện Bài Tập Thể Hình & Hướng Dẫn Chuyển Động
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Minh họa hoạt ảnh vector sống động, hướng dẫn chuẩn kỹ thuật, cách thở và phân bổ hiệp tập.
-        </p>
-      </div>
-
-      {/* Grid of Exercises */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {exercisesList.map((exercise) => (
-          <div
-            key={exercise.slug}
-            className="group rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:border-primary/50 transition-all flex flex-col"
-          >
-            {/* 16:9 Image Preview with active animation */}
-            <div className="relative aspect-[16/9] w-full bg-secondary/80 overflow-hidden flex items-center justify-center p-2">
-              <object
-                data={exercise.animationUrl}
-                type="image/svg+xml"
-                className="w-full h-full object-contain pointer-events-none scale-110 group-hover:scale-125 transition-transform duration-300"
-                aria-label={exercise.name}
-              >
-                <img
-                  src={exercise.posterUrl}
-                  alt={exercise.name}
-                  className="w-full h-full object-cover"
-                />
-              </object>
-              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-sm">
-                  <Activity className="w-2.5 h-2.5 animate-pulse" /> Live Motion
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-background/90 backdrop-blur-md border border-border text-foreground">
-                  {exercise.difficulty}
-                </span>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-              <div>
-                <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
-                  {exercise.name}
-                </h3>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
-                  Nhóm cơ: {exercise.target}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
-                  {exercise.description}
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                <span>Gợi ý: <strong>{exercise.reps}</strong></span>
-              </div>
-
-              <Link
-                href={`/exercises/${exercise.slug}`}
-                className="w-full py-2 rounded-xl bg-secondary hover:bg-accent text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-              >
-                Xem Video & Hướng Dẫn Kỹ Thuật <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <ExercisesCatalogView
+      exercises={exercisesList}
+      userConfigs={state.exerciseConfigs || {}}
+    />
   );
 }

@@ -130,29 +130,34 @@
   <!-- Animated Biomechanical Figure -->
   <g id="animatedFigure">
     
-        <!-- Floor line -->
-        <line x1="180" y1="460" x2="600" y2="460" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        <!-- High-Density Rubber Training Mat -->
+        <polygon points="160,480 640,480 600,435 200,435" fill="#0b1120" stroke="#1e293b" stroke-width="2"/>
+        <line x1="200" y1="475" x2="600" y2="475" stroke="#06b6d4" stroke-width="2" opacity="0.6"/>
         
         <g class="anim-plank">
-          <!-- Feet contact -->
-          <circle cx="250" cy="454" r="7" fill="#64748b"/>
-          <!-- Straight Body (Feet to Head) -->
-          <line x1="255" y1="448" x2="490" y2="395" stroke="#f8fafc" stroke-width="14" stroke-linecap="round"/>
-          <line x1="255" y1="448" x2="490" y2="395" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+          <!-- Athletic Sneaker Contact -->
+          <ellipse cx="250" cy="454" rx="12" ry="5" fill="#ef4444"/>
           
-          <!-- Core Target Zone (Pulsing in animation) -->
-          <ellipse cx="390" cy="422" rx="35" ry="16" fill="#fbbf24" opacity="0.5" class="anim-pulse"/>
+          <!-- Rigid Spine Laser Guideline -->
+          <line x1="240" y1="448" x2="540" y2="390" stroke="#10b981" stroke-width="2.5" stroke-dasharray="6 6" opacity="0.8"/>
           
-          <!-- Forearms on ground -->
-          <line x1="485" y1="400" x2="485" y2="455" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/>
-          <line x1="485" y1="455" x2="530" y2="455" stroke="#38bdf8" stroke-width="8" stroke-linecap="round"/>
+          <!-- Muscular Body Silhouette -->
+          <path d="M 255 450 Q 340 430 420 410 L 490 400 L 485 375 Q 410 390 330 415 Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
           
-          <!-- Head -->
-          <circle cx="520" cy="385" r="17" fill="#f8fafc"/>
-          <circle cx="520" cy="385" r="13" fill="#334155"/>
+          <!-- Compression Shorts -->
+          <path d="M 360 425 L 425 410 L 415 390 L 350 405 Z" fill="#0f766e" stroke="#14b8a6" stroke-width="2"/>
           
-          <!-- Laser spine level guide -->
-          <line x1="240" y1="448" x2="540" y2="390" stroke="#10b981" stroke-width="2" stroke-dasharray="5 5" opacity="0.8"/>
+          <!-- Core Target Zone Heatmap (Pulsing belt) -->
+          <ellipse cx="390" cy="415" rx="38" ry="18" fill="#fbbf24" opacity="0.8" class="anim-pulse"/>
+          
+          <!-- Forearms & Elbows on Ground -->
+          <rect x="470" y="448" width="26" height="12" rx="4" fill="#0284c7"/>
+          <line x1="480" y1="395" x2="480" y2="450" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="480" cy="395" r="12" fill="#475569" stroke="#64748b" stroke-width="2"/>
+          
+          <!-- Athletic Head with Headband -->
+          <circle cx="520" cy="385" r="18" fill="#f8fafc"/>
+          <rect x="508" y="381" width="22" height="5" rx="2" fill="#0ea5e9"/>
         </g>
       
   </g>

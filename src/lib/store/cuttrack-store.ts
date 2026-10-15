@@ -103,10 +103,20 @@ export interface WeightEntry {
   notes?: string;
 }
 
+export interface ExerciseConfig {
+  targetSets: number;
+  targetReps: number;
+  tempo: string;
+  restSeconds: number;
+  targetRpe: number;
+  notes?: string;
+}
+
 export interface CutTrackDataState {
   profile: UserProfileState;
   foods: FoodItem[];
   diary: Record<string, { LUNCH: MealSlotData; DINNER: MealSlotData }>; // keyed by YYYY-MM-DD
+  exerciseConfigs?: Record<string, ExerciseConfig>;
   workouts: WorkoutSessionData[];
   measurements: WeightEntry[];
   expenses: { id: string; date: string; title: string; amountVnd: number; category: string }[];
@@ -548,6 +558,228 @@ function getInitialState(): CutTrackDataState {
           totalCostVnd: 23000,
         },
       },
+      "2026-10-14": {
+        LUNCH: {
+          slot: "LUNCH",
+          slotName: "Bữa trưa (Suất quán)",
+          items: [
+            {
+              id: "item-prev-1",
+              foodId: "food-com-ech-kho",
+              foodName: "Cơm ếch kho sả ớt",
+              grams: 350,
+              edibleGrams: 280,
+              calories: 510,
+              protein: 31.0,
+              carbs: 58.0,
+              fat: 17.0,
+              priceVnd: 35000,
+              weightBasis: "BONE_IN",
+              isHomePrepared: false,
+            },
+          ],
+          totalCalories: 510,
+          totalProtein: 31.0,
+          totalCarbs: 58.0,
+          totalFat: 17.0,
+          totalCostVnd: 35000,
+        },
+        DINNER: {
+          slot: "DINNER",
+          slotName: "Bữa tối (Thêm trứng/gà tại nhà)",
+          items: [
+            {
+              id: "item-prev-2",
+              foodId: "food-ma-dui-ga-luoc",
+              foodName: "Má đùi gà luộc (Nhà làm)",
+              grams: 200,
+              edibleGrams: 130,
+              calories: 330,
+              protein: 40.0,
+              carbs: 0,
+              fat: 18.0,
+              priceVnd: 22000,
+              weightBasis: "BONE_IN",
+              isHomePrepared: true,
+            },
+            {
+              id: "item-prev-3",
+              foodId: "food-com-trang",
+              foodName: "Cơm trắng (1 chén)",
+              grams: 150,
+              edibleGrams: 150,
+              calories: 195,
+              protein: 4.0,
+              carbs: 42.3,
+              fat: 0.5,
+              priceVnd: 0,
+              weightBasis: "COOKED",
+              isHomePrepared: true,
+            },
+          ],
+          totalCalories: 525,
+          totalProtein: 44.0,
+          totalCarbs: 42.3,
+          totalFat: 18.5,
+          totalCostVnd: 22000,
+        },
+      },
+      "2026-10-13": {
+        LUNCH: {
+          slot: "LUNCH",
+          slotName: "Bữa trưa (Suất quán)",
+          items: [
+            {
+              id: "item-prev-4",
+              foodId: "food-bun-bo-hue",
+              foodName: "Bún bò Huế (ít nước béo)",
+              grams: 550,
+              edibleGrams: 550,
+              calories: 530,
+              protein: 28.5,
+              carbs: 65.0,
+              fat: 18.0,
+              priceVnd: 35000,
+              weightBasis: "EDIBLE",
+              isHomePrepared: false,
+            },
+          ],
+          totalCalories: 530,
+          totalProtein: 28.5,
+          totalCarbs: 65.0,
+          totalFat: 18.0,
+          totalCostVnd: 35000,
+        },
+        DINNER: {
+          slot: "DINNER",
+          slotName: "Bữa tối (Thêm trứng/gà tại nhà)",
+          items: [
+            {
+              id: "item-prev-5",
+              foodId: "food-trung-ga-luoc",
+              foodName: "Trứng gà luộc (3 quả)",
+              grams: 165,
+              edibleGrams: 165,
+              calories: 235,
+              protein: 20.7,
+              carbs: 1.4,
+              fat: 15.6,
+              priceVnd: 10500,
+              weightBasis: "EDIBLE",
+              isHomePrepared: true,
+            },
+            {
+              id: "item-prev-6",
+              foodId: "food-com-trang",
+              foodName: "Cơm trắng",
+              grams: 160,
+              edibleGrams: 160,
+              calories: 208,
+              protein: 4.2,
+              carbs: 45.0,
+              fat: 0.5,
+              priceVnd: 0,
+              weightBasis: "COOKED",
+              isHomePrepared: true,
+            },
+          ],
+          totalCalories: 443,
+          totalProtein: 24.9,
+          totalCarbs: 46.4,
+          totalFat: 16.1,
+          totalCostVnd: 10500,
+        },
+      },
+    },
+    exerciseConfigs: {
+      "push-up": {
+        targetSets: 3,
+        targetReps: 12,
+        tempo: "2-0-1",
+        restSeconds: 60,
+        targetRpe: 7.5,
+        notes: "Giữ mũi chân thẳng, siết mông gồng bụng, khuỷu tay chếch 45 độ.",
+      },
+      "diamond-push-up": {
+        targetSets: 3,
+        targetReps: 10,
+        tempo: "2-1-1",
+        restSeconds: 60,
+        targetRpe: 8,
+        notes: "Tập trung lực cơ tay sau, ngực chạm nhẹ kẽ tay.",
+      },
+      "squat": {
+        targetSets: 4,
+        targetReps: 15,
+        tempo: "2-1-1",
+        restSeconds: 60,
+        targetRpe: 7.5,
+        notes: "Mở gối theo hướng ngón chân, đạp mạnh qua gót.",
+      },
+      "reverse-lunge": {
+        targetSets: 3,
+        targetReps: 10,
+        tempo: "2-0-1",
+        restSeconds: 60,
+        targetRpe: 8,
+        notes: "Gối sau hạ gần chạm thảm, thân trên thẳng tự nhiên.",
+      },
+      "plank": {
+        targetSets: 3,
+        targetReps: 45,
+        tempo: "Isometric",
+        restSeconds: 45,
+        targetRpe: 8,
+        notes: "Hóp bụng nhẹ, cuộn xương chậu ra sau, thở đều qua mũi.",
+      },
+      "reverse-crunch": {
+        targetSets: 3,
+        targetReps: 12,
+        tempo: "2-1-2",
+        restSeconds: 45,
+        targetRpe: 7.5,
+        notes: "Cuộn xương chậu nâng mông lên 5cm khỏi thảm, không giật chân.",
+      },
+      "dead-bug": {
+        targetSets: 3,
+        targetReps: 10,
+        tempo: "3-1-3",
+        restSeconds: 45,
+        targetRpe: 7,
+        notes: "Thắt lưng ép sát thảm, không để hở khoảng trống sau lưng.",
+      },
+      "glute-bridge": {
+        targetSets: 3,
+        targetReps: 15,
+        tempo: "2-2-1",
+        restSeconds: 45,
+        targetRpe: 7,
+        notes: "Đẩy hông cao nhất có thể, siết chặt cơ mông 2 giây ở đỉnh.",
+      },
+      "backpack-row": {
+        targetSets: 4,
+        targetReps: 12,
+        tempo: "2-1-1",
+        restSeconds: 60,
+        targetRpe: 8,
+        notes: "Lưng phẳng, kéo cùi chỏ sát mạn sườn, ép chặt bả vai.",
+      },
+      "mountain-climber": {
+        targetSets: 3,
+        targetReps: 30,
+        tempo: "Cadence",
+        restSeconds: 45,
+        targetRpe: 8.5,
+        notes: "Gồng chắc vai và cơ lõi, đạp gối nhanh có kiểm soát.",
+      },
+      "football": {
+        targetSets: 1,
+        targetReps: 45,
+        tempo: "Match Play",
+        restSeconds: 0,
+        targetRpe: 8.5,
+        notes: "Thi đấu 45 phút sân cỏ nhân tạo. Uống đủ nước bù điện giải.",
+      },
     },
     workouts: [
       {
@@ -599,7 +831,12 @@ export function loadCutTrackState(): CutTrackDataState {
     }
     if (fs.existsSync(DB_FILE)) {
       const content = fs.readFileSync(DB_FILE, "utf-8");
-      return JSON.parse(content);
+      const parsed: CutTrackDataState = JSON.parse(content);
+      // Ensure exerciseConfigs and diary exist
+      if (!parsed.exerciseConfigs) {
+        parsed.exerciseConfigs = getInitialState().exerciseConfigs;
+      }
+      return parsed;
     }
   } catch (err) {
     console.error("Failed to load local CutTrack state, reinitializing:", err);
@@ -619,4 +856,37 @@ export function saveCutTrackState(state: CutTrackDataState): void {
   } catch (err) {
     console.error("Failed to save local CutTrack state:", err);
   }
+}
+
+export function getOrCreateDiaryForDate(state: CutTrackDataState, date: string): { LUNCH: MealSlotData; DINNER: MealSlotData } {
+  if (state.diary[date]) {
+    return state.diary[date];
+  }
+
+  const emptyDay: { LUNCH: MealSlotData; DINNER: MealSlotData } = {
+    LUNCH: {
+      slot: "LUNCH",
+      slotName: "Bữa trưa (Suất quán)",
+      items: [],
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+      totalCostVnd: 0,
+    },
+    DINNER: {
+      slot: "DINNER",
+      slotName: "Bữa tối (Thêm trứng/gà tại nhà)",
+      items: [],
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+      totalCostVnd: 0,
+    },
+  };
+
+  state.diary[date] = emptyDay;
+  saveCutTrackState(state);
+  return emptyDay;
 }

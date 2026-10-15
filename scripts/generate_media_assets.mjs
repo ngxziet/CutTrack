@@ -766,72 +766,90 @@ function renderExercisePose(poseType, cx, cy, accent, isAnimated = false) {
   // If animated, we inject CSS animation classes
   switch (poseType) {
     case 'pushup':
-    case 'diamond-pushup':
+    case 'diamond-pushup': {
+      const isDiamond = poseType === 'diamond-pushup';
       return `
-        <!-- Bench / Floor line -->
-        <line x1="${cx - 240}" y1="${cy + 90}" x2="${cx + 200}" y2="${cy + 90}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-        <line x1="${cx - 200}" y1="${cy + 90}" x2="${cx + 160}" y2="${cy + 90}" stroke="#64748b" stroke-width="2" stroke-dasharray="8 8"/>
+        <!-- Isometric High-Density Rubber Gym Mat -->
+        <polygon points="${cx - 260},${cy + 110} ${cx + 260},${cy + 110} ${cx + 220},${cy + 60} ${cx - 220},${cy + 60}" fill="#0b1120" stroke="#1e293b" stroke-width="2"/>
+        <line x1="${cx - 220}" y1="${cy + 105}" x2="${cx + 220}" y2="${cy + 105}" stroke="#38bdf8" stroke-width="2" opacity="0.6"/>
         
         <g class="${isAnimated ? 'anim-pushup' : ''}">
-          <!-- Feet contact -->
-          <circle cx="${cx - 160}" cy="${cy + 82}" r="8" fill="#64748b"/>
+          <!-- Athletic Sneaker Contact -->
+          <ellipse cx="${cx - 160}" cy="${cy + 82}" rx="14" ry="6" fill="#ef4444"/>
+          <rect x="${cx - 165}" y="${cy + 76}" width="16" height="4" rx="2" fill="#ffffff"/>
           
-          <!-- Torso & Legs line (Rigid Plank) -->
-          <line x1="${cx - 155}" y1="${cy + 75}" x2="${cx + 80}" y2="${cy - 10}" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
-          <line x1="${cx - 155}" y1="${cy + 75}" x2="${cx + 80}" y2="${cy - 10}" stroke="${accent}" stroke-width="4" stroke-linecap="round"/>
+          <!-- Neutral Spine Laser Alignment Guide -->
+          <line x1="${cx - 170}" y1="${cy + 82}" x2="${cx + 140}" y2="${cy - 36}" stroke="#10b981" stroke-width="2" stroke-dasharray="6 6" opacity="0.8"/>
           
-          <!-- Muscle Target Highlight (Chest & Triceps) -->
-          <ellipse cx="${cx + 50}" cy="${cy}" rx="24" ry="14" fill="${accent}" opacity="0.6"/>
+          <!-- Muscular Legs & Quadriceps -->
+          <path d="M ${cx - 155} ${cy + 75} Q ${cx - 100} ${cy + 55} ${cx - 40} ${cy + 30} L ${cx - 45} ${cy + 15} Q ${cx - 110} ${cy + 40} ${cx - 155} ${cy + 65} Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
           
-          <!-- Arms -->
+          <!-- Athletic Training Shorts -->
+          <path d="M ${cx - 50} ${cy + 35} L ${cx + 15} ${cy + 0} L ${cx + 5} ${cy - 20} L ${cx - 55} ${cy + 10} Z" fill="#0f766e" stroke="#14b8a6" stroke-width="2"/>
+          
+          <!-- Muscular Torso & Sculpted Chest -->
+          <path d="M ${cx + 5} ${cy - 5} Q ${cx + 45} ${cy - 25} ${cx + 80} ${cy - 35} L ${cx + 70} ${cy - 55} Q ${cx + 30} ${cy - 40} ${cx - 5} ${cy - 25} Z" fill="#334155" stroke="#64748b" stroke-width="2"/>
+          <line x1="${cx + 20}" y1="${cy - 12}" x2="${cx + 35}" y2="${cy - 22}" stroke="#475569" stroke-width="2"/>
+          
+          <!-- Muscle Target Highlight (Chest & Triceps Heatmap) -->
+          <ellipse cx="${cx + 55}" cy="${cy - 30}" rx="28" ry="16" fill="${accent}" opacity="0.75" class="${isAnimated ? 'anim-pulse' : ''}"/>
+          
+          <!-- Arm & Deltoid Cap -->
           <g class="${isAnimated ? 'anim-arms' : ''}">
-            <polyline points="${cx + 80},${cy - 5} ${cx + 70},${cy + 40} ${cx + 75},${cy + 86}" fill="none" stroke="#f8fafc" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-            <polyline points="${cx + 80},${cy - 5} ${cx + 70},${cy + 40} ${cx + 75},${cy + 86}" fill="none" stroke="${accent}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Shoulder Cap -->
+            <circle cx="${cx + 75}" cy="${cy - 30}" r="12" fill="#475569" stroke="#64748b" stroke-width="2"/>
+            <!-- Bicep/Tricep & Forearm -->
+            <polyline points="${cx + 75},${cy - 25} ${cx + 60},${cy + 25} ${cx + 75},${cy + 85}" fill="none" stroke="#f8fafc" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="${cx + 75},${cy - 25} ${cx + 60},${cy + 25} ${cx + 75},${cy + 85}" fill="none" stroke="${accent}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
           
-          <!-- Hands on ground -->
-          <ellipse cx="${cx + 75}" cy="${cy + 86}" rx="14" ry="6" fill="#0284c7"/>
+          <!-- Hands on Mat -->
+          <ellipse cx="${cx + 75}" cy="${cy + 86}" rx="15" ry="6" fill="#0284c7"/>
           
-          <!-- Head -->
+          <!-- Head with Athletic Headband -->
           <circle cx="${cx + 120}" cy="${cy - 26}" r="18" fill="#f8fafc"/>
-          <circle cx="${cx + 120}" cy="${cy - 26}" r="14" fill="#334155"/>
-          
-          <!-- Neutral Spine Guideline -->
-          <line x1="${cx - 170}" y1="${cy + 82}" x2="${cx + 140}" y2="${cy - 36}" stroke="#10b981" stroke-width="2" stroke-dasharray="6 6" opacity="0.7"/>
+          <rect x="${cx + 108}" y="${cy - 30}" width="22" height="5" rx="2" fill="#0284c7"/>
         </g>
       `;
+    }
 
     case 'squat':
       return `
-        <!-- Floor line -->
-        <line x1="${cx - 160}" y1="${cy + 130}" x2="${cx + 160}" y2="${cy + 130}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        <!-- Perspective Floor & Platform -->
+        <polygon points="${cx - 200},${cy + 145} ${cx + 200},${cy + 145} ${cx + 160},${cy + 100} ${cx - 160},${cy + 100}" fill="#0b1120" stroke="#1e293b" stroke-width="2"/>
+        <line x1="${cx - 160}" y1="${cy + 140}" x2="${cx + 160}" y2="${cy + 140}" stroke="#10b981" stroke-width="2" opacity="0.6"/>
         
         <g class="${isAnimated ? 'anim-squat' : ''}">
-          <!-- Head -->
+          <!-- Head with Headband -->
           <circle cx="${cx}" cy="${cy - 100}" r="20" fill="#f8fafc"/>
-          <circle cx="${cx}" cy="${cy - 100}" r="15" fill="#334155"/>
+          <rect x="${cx - 12}" y="${cy - 106}" width="24" height="6" rx="2" fill="#f59e0b"/>
           
-          <!-- Torso (Upright spine) -->
-          <line x1="${cx}" y1="${cy - 80}" x2="${cx - 15}" y2="${cy}" stroke="#f8fafc" stroke-width="14" stroke-linecap="round"/>
+          <!-- Upright Muscular Torso & Tank Top -->
+          <path d="M ${cx - 20} ${cy - 80} L ${cx + 20} ${cy - 80} L ${cx + 15} ${cy - 15} L ${cx - 25} ${cy - 15} Z" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
           
-          <!-- Glutes & Quads Highlight -->
-          <circle cx="${cx - 20}" cy="${cy + 5}" r="22" fill="${accent}" opacity="0.6"/>
+          <!-- Athletic Shorts -->
+          <path d="M ${cx - 30} ${cy - 15} L ${cx + 25} ${cy - 15} L ${cx + 40} ${cy + 25} L ${cx - 45} ${cy + 25} Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+          
+          <!-- Glutes & Quads Heatmap -->
+          <ellipse cx="${cx}" cy="${cy + 15}" rx="32" ry="20" fill="${accent}" opacity="0.8" class="${isAnimated ? 'anim-pulse' : ''}"/>
           
           <!-- Thighs (Parallel) -->
-          <line x1="${cx - 15}" y1="${cy}" x2="${cx + 45}" y2="${cy + 10}" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
-          <line x1="${cx - 15}" y1="${cy}" x2="${cx + 45}" y2="${cy + 10}" stroke="${accent}" stroke-width="6" stroke-linecap="round"/>
+          <line x1="${cx - 15}" y1="${cy + 15}" x2="${cx + 50}" y2="${cy + 20}" stroke="#f8fafc" stroke-width="14" stroke-linecap="round"/>
+          <line x1="${cx - 15}" y1="${cy + 15}" x2="${cx + 50}" y2="${cy + 20}" stroke="${accent}" stroke-width="6" stroke-linecap="round"/>
           
-          <!-- Shins / Calves -->
-          <line x1="${cx + 45}" y1="${cy + 10}" x2="${cx + 40}" y2="${cy + 125}" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/>
+          <!-- Calves & Shins -->
+          <line x1="${cx + 50}" y1="${cy + 20}" x2="${cx + 45}" y2="${cy + 125}" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
           
-          <!-- Feet -->
-          <ellipse cx="${cx + 50}" cy="${cy + 127}" rx="22" ry="7" fill="#64748b"/>
+          <!-- Cross-training Sneaker -->
+          <ellipse cx="${cx + 52}" cy="${cy + 127}" rx="22" ry="7" fill="#ef4444"/>
+          <rect x="${cx + 42}" y="${cy + 123}" width="18" height="4" rx="2" fill="#ffffff"/>
           
-          <!-- Arms extended forward for counter-balance -->
-          <line x1="${cx}" y1="${cy - 65}" x2="${cx + 70}" y2="${cy - 60}" stroke="#94a3b8" stroke-width="8" stroke-linecap="round"/>
+          <!-- Arms extended forward for balance -->
+          <line x1="${cx + 10}" y1="${cy - 65}" x2="${cx + 80}" y2="${cy - 60}" stroke="#cbd5e1" strokeWidth="10" strokeLinecap="round"/>
           
           <!-- 90 deg knee indicator -->
-          <path d="M ${cx + 25} ${cy + 10} L ${cx + 45} ${cy + 10} L ${cx + 45} ${cy + 30}" fill="none" stroke="#f59e0b" stroke-width="2"/>
+          <path d="M ${cx + 30} ${cy + 20} L ${cx + 50} ${cy + 20} L ${cx + 50} ${cy + 40}" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="${cx + 58}" y="${cy + 38}" fill="#f59e0b" font-size="11" font-weight="bold">90°</text>
         </g>
       `;
 
@@ -866,29 +884,34 @@ function renderExercisePose(poseType, cx, cy, accent, isAnimated = false) {
 
     case 'plank':
       return `
-        <!-- Floor line -->
-        <line x1="${cx - 220}" y1="${cy + 80}" x2="${cx + 200}" y2="${cy + 80}" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        <!-- High-Density Rubber Training Mat -->
+        <polygon points="${cx - 240},${cy + 100} ${cx + 240},${cy + 100} ${cx + 200},${cy + 55} ${cx - 200},${cy + 55}" fill="#0b1120" stroke="#1e293b" stroke-width="2"/>
+        <line x1="${cx - 200}" y1="${cy + 95}" x2="${cx + 200}" y2="${cy + 95}" stroke="#06b6d4" stroke-width="2" opacity="0.6"/>
         
         <g class="${isAnimated ? 'anim-plank' : ''}">
-          <!-- Feet contact -->
-          <circle cx="${cx - 150}" cy="${cy + 74}" r="7" fill="#64748b"/>
-          <!-- Straight Body (Feet to Head) -->
-          <line x1="${cx - 145}" y1="${cy + 68}" x2="${cx + 90}" y2="${cy + 15}" stroke="#f8fafc" stroke-width="14" stroke-linecap="round"/>
-          <line x1="${cx - 145}" y1="${cy + 68}" x2="${cx + 90}" y2="${cy + 15}" stroke="${accent}" stroke-width="4" stroke-linecap="round"/>
+          <!-- Athletic Sneaker Contact -->
+          <ellipse cx="${cx - 150}" cy="${cy + 74}" rx="12" ry="5" fill="#ef4444"/>
           
-          <!-- Core Target Zone (Pulsing in animation) -->
-          <ellipse cx="${cx - 10}" cy="${cy + 42}" rx="35" ry="16" fill="${accent}" opacity="0.5" class="${isAnimated ? 'anim-pulse' : ''}"/>
+          <!-- Rigid Spine Laser Guideline -->
+          <line x1="${cx - 160}" y1="${cy + 68}" x2="${cx + 140}" y2="${cy + 10}" stroke="#10b981" stroke-width="2.5" stroke-dasharray="6 6" opacity="0.8"/>
           
-          <!-- Forearms on ground -->
-          <line x1="${cx + 85}" y1="${cy + 20}" x2="${cx + 85}" y2="${cy + 75}" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/>
-          <line x1="${cx + 85}" y1="${cy + 75}" x2="${cx + 130}" y2="${cy + 75}" stroke="#38bdf8" stroke-width="8" stroke-linecap="round"/>
+          <!-- Muscular Body Silhouette -->
+          <path d="M ${cx - 145} ${cy + 70} Q ${cx - 60} ${cy + 50} ${cx + 20} ${cy + 30} L ${cx + 90} ${cy + 20} L ${cx + 85} ${cy - 5} Q ${cx + 10} ${cy + 10} ${cx - 70} ${cy + 35} Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
           
-          <!-- Head -->
-          <circle cx="${cx + 120}" cy="${cy + 5}" r="17" fill="#f8fafc"/>
-          <circle cx="${cx + 120}" cy="${cy + 5}" r="13" fill="#334155"/>
+          <!-- Compression Shorts -->
+          <path d="M ${cx - 40} ${cy + 45} L ${cx + 25} ${cy + 30} L ${cx + 15} ${cy + 10} L ${cx - 50} ${cy + 25} Z" fill="#0f766e" stroke="#14b8a6" stroke-width="2"/>
           
-          <!-- Laser spine level guide -->
-          <line x1="${cx - 160}" y1="${cy + 68}" x2="${cx + 140}" y2="${cy + 10}" stroke="#10b981" stroke-width="2" stroke-dasharray="5 5" opacity="0.8"/>
+          <!-- Core Target Zone Heatmap (Pulsing belt) -->
+          <ellipse cx="${cx - 10}" cy="${cy + 35}" rx="38" ry="18" fill="${accent}" opacity="0.8" class="${isAnimated ? 'anim-pulse' : ''}"/>
+          
+          <!-- Forearms & Elbows on Ground -->
+          <rect x="${cx + 70}" y="${cy + 68}" width="26" height="12" rx="4" fill="#0284c7"/>
+          <line x1="${cx + 80}" y1="${cy + 15}" x2="${cx + 80}" y2="${cy + 70}" stroke="#f8fafc" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="${cx + 80}" cy="${cy + 15}" r="12" fill="#475569" stroke="#64748b" stroke-width="2"/>
+          
+          <!-- Athletic Head with Headband -->
+          <circle cx="${cx + 120}" cy="${cy + 5}" r="18" fill="#f8fafc"/>
+          <rect x="${cx + 108}" y="${cy + 1}" width="22" height="5" rx="2" fill="#0ea5e9"/>
         </g>
       `;
 
