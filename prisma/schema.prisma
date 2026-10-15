@@ -1,0 +1,648 @@
+// CutTrack - Prisma Schema Definition
+// Database Architecture for Nutrition, Budget, Exercise & Progress Tracking
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum WeightBasis {
+  RAW        // Cân khối lượng sống (chưa chế biến)
+  COOKED     // Cân khối lượng chín (sau khi nấu)
+  EDIBLE     // Chỉ tính phần thịt/phần ăn được (đã lọc xương/da)
+  BONE_IN    // Tính cả xương/da/vỏ (chưa lọc bỏ)
+}
+
+enum NutritionConfidence {
+  VERIFIED_LABEL       // Xác thực từ nhãn dinh dưỡng nhà sản xuất
+  DATABASE             // Cơ sở dữ liệu uy tín (NIN, USDA)
+  RESTAURANT_ESTIMATE  // Ước tính từ khảo sát suất ăn tiệm/quán
+  USER_ESTIMATE        // Người dùng tự ước tính
+}
+
+enum MealSlot {
+  LUNCH   // Bữa trưa (ưu tiên suất quán khi đi làm)
+  DINNER  // Bữa tối (có thể thêm trứng/gà tự luộc)
+  CUSTOM  // Bữa phụ hoặc bữa đặc biệt (nửa con gà nướng ngày đá banh)
+}
+
+enum MediaType {
+  IMAGE_4_3        // Ảnh thumbnail tỷ lệ 4:3
+  IMAGE_16_9       // Ảnh chi tiết tỷ lệ 16:9
+  VIDEO_LOOP_WEBM  // Video loop định dạng WebM
+  VIDEO_LOOP_MP4   // Video loop định dạng MP4
+  LOTTIE_JSON      // Hoạt ảnh vector Lottie JSON
+  STATIC_POSTER    // Poster tĩnh cho fallback / reduced-motion
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ActivityLevel {
+  SEDENTARY          // Ít vận động (làm việc văn phòng, đi lại nhẹ)
+  LIGHTLY_ACTIVE     // Vận động nhẹ (1-3 ngày/tuần hoặc 1 buổi đá banh)
+  MODERATELY_ACTIVE  // Vận động vừa (3-5 ngày/tuần)
+  VERY_ACTIVE        // Vận động nhiều (6-7 ngày/tuần)
+  EXTRA_ACTIVE       // Vận động cường độ rất cao / lao động nặng
+}
+
+enum PhaseType {
+  FAT_LOSS     // Giai đoạn cắt giảm mỡ (Cut)
+  MAINTENANCE  // Giai đoạn giữ cân / ổn định trao đổi chất
+  HYPERTROPHY  // Giai đoạn tăng cơ (Lean Bulk)
+}
+
+enum Difficulty {
+  BEGINNER      // Mới bắt đầu
+  INTERMEDIATE  // Trung bình
+  ADVANCED      // Nâng cao
+}
+
+// ==========================================
+// USER & PROFILE MODELS
+// ==========================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String?  @unique
+  name      String
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Quan hệ
+  profile           UserProfile?
+  nutritionGoals    NutritionGoal[]
+  fitnessPhases     FitnessPhase[]
+  meals             Meal[]
+  mealTemplates     MealTemplate[]
+  workouts          Workout[]
+  workoutPlans      WorkoutPlan[]
+  budgets           Budget[]
+  budgetTransactions BudgetTransaction[]
+  bodyMeasurements  BodyMeasurement[]
+  progressPhotos    ProgressPhoto[]
+  weeklyPlans       WeeklyPlan[]
+  customFoods       Food[]              @relation("UserCustomFoods")
+  customExercises   Exercise[]          @relation("UserCustomExercises")
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                   String        @id @default(uuid())
+  userId               String        @unique
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  age                  Int           @default(23)
+  gender               Gender        @default(MALE)
+  heightCm             Float         @default(168.0)
+  currentWeightKg      Float         @default(68.0)
+  targetWeightKg       Float         @default(62.0)
+  activityLevel        ActivityLevel @default(SEDENTARY)
+  bmrKcal              Float         @default(1620.0) // BMR theo công thức Mifflin-St Jeor
+  tdeeKcal             Float         @default(1945.0) // TDEE ít vận động
+  dailyBudgetVnd       Int           @default(80000)  // 70.000 - 80.000 VND/ngày (lưu số nguyên)
+  defaultMealSlotsCount Int          @default(2)      // Mặc định 2 bữa chính/ngày
+  notes                String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@map("user_profiles")
+}
+
+model NutritionGoal {
+  id                 String    @id @default(uuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetCaloriesKcal Float     @default(1600.0) // Mức khuyến nghị ban đầu 1500 - 1650 kcal
+  minCaloriesKcal    Float?    @default(1500.0)
+  maxCaloriesKcal    Float?    @default(1650.0)
+  targetProteinG     Float?    @default(130.0)  // ~1.8-2.0g/kg cho giai đoạn cut
+  targetCarbsG       Float?    @default(160.0)
+  targetFatG         Float?    @default(45.0)
+  targetFiberG       Float?    @default(25.0)
+  targetWaterMl      Int?      @default(2500)
+  warningNote        String?   // "Mức 1300 kcal chỉ là tham khảo tự chọn, có thể quá thấp so với BMR 1620 / TDEE 1945"
+  isActive           Boolean   @default(true)
+  startDate          DateTime  @default(now())
+  endDate            DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId, isActive])
+  @@map("nutrition_goals")
+}
+
+model FitnessPhase {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String    @default("Giai đoạn 1: Giảm mỡ toàn thân (Fat Loss Cut)")
+  phaseType      PhaseType @default(FAT_LOSS)
+  startWeightKg  Float     @default(68.0)
+  targetWeightKg Float     @default(62.0)
+  startDate      DateTime  @default(now())
+  endDate        DateTime?
+  isCurrent      Boolean   @default(true)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, isCurrent])
+  @@map("fitness_phases")
+}
+
+// ==========================================
+// FOOD & NUTRITION MODELS
+// ==========================================
+
+model Food {
+  id                   String              @id @default(uuid())
+  slug                 String              @unique
+  nameVi               String              // Tên tiếng Việt
+  nameEn               String?             // Tên tiếng Anh (tùy chọn)
+  description          String?
+  category             String              // "Cơm tiệm", "Bún/Phở", "Thịt/Trứng", "Đồ uống", "Ăn nhanh"
+  cookingMethod        String?             // "Kho", "Luộc", "Nướng", "Nấu nước dùng", "Hấp"
+  isRestaurantFood     Boolean             @default(false) // Món quán ăn ngoài
+  isHomeCooked         Boolean             @default(true)  // Món nấu tại nhà
+  servingStandardGrams Float               @default(100.0) // Khẩu phần cơ sở (100g)
+  defaultWeightBasis   WeightBasis         @default(COOKED)
+  edibleYieldPercent   Float?              // Tỷ lệ ăn được (vd: 65% cho má đùi gà cả xương)
+  caloriesKcal         Float               // Calo trung bình / 100g hoặc khẩu phần chuẩn
+  minCaloriesKcal      Float?              // Calo tối thiểu (dải ước tính)
+  maxCaloriesKcal      Float?              // Calo tối đa (dải ước tính)
+  proteinG             Float               // Protein (g)
+  carbsG               Float               // Carbohydrate (g)
+  fatG                 Float               // Chất béo (g)
+  fiberG               Float?              // Chất xơ (g)
+  sugarG               Float?              // Đường (g)
+  sodiumMg             Float?              // Natri (mg)
+  nutritionConfidence  NutritionConfidence @default(DATABASE)
+  notes                String?             // Lưu ý về da gà, dầu mỡ, đường, xương, sốt chan
+  createdById          String?
+  createdBy            User?               @relation("UserCustomFoods", fields: [createdById], references: [id], onDelete: SetNull)
+  isSystem             Boolean             @default(true)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  // Quan hệ
+  servings             FoodServing[]
+  sources              NutritionSource[]
+  media                FoodMedia[]
+  prices               FoodPrice[]
+  mealItems            MealItem[]
+  weeklyPlanMeals      WeeklyPlanMeal[]
+
+  @@index([category])
+  @@index([isRestaurantFood])
+  @@map("foods")
+}
+
+model FoodServing {
+  id                 String      @id @default(uuid())
+  foodId             String
+  food               Food        @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  name               String      // "1 chén (bát con)", "1 suất cơm quán", "1 cái má đùi", "1 tô lớn", "1 lon 330ml"
+  quantityGrams      Float       // Khối lượng tính bằng gram hoặc ml
+  weightBasis        WeightBasis @default(COOKED)
+  isDefault          Boolean     @default(false)
+  edibleYieldPercent Float?      // Phần ăn được
+  caloriesKcal       Float
+  minCaloriesKcal    Float?
+  maxCaloriesKcal    Float?
+  proteinG           Float
+  carbsG             Float
+  fatG               Float
+  notes              String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([foodId])
+  @@map("food_servings")
+}
+
+model NutritionSource {
+  id          String              @id @default(uuid())
+  foodId      String
+  food        Food                @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  sourceName  String              // Viện Dinh dưỡng Quốc gia (NIN), USDA, Nhãn hộp bao bì, v.v.
+  sourceUrl   String?
+  confidence  NutritionConfidence @default(DATABASE)
+  license     String?             // "Public Domain", "Open Data", "Product Label"
+  verifiedAt  DateTime?
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([foodId])
+  @@map("nutrition_sources")
+}
+
+model FoodMedia {
+  id            String    @id @default(uuid())
+  foodId        String
+  food          Food      @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  type          MediaType @default(IMAGE_4_3)
+  url           String    // Đường dẫn ảnh
+  posterUrl     String?   // Poster dự phòng
+  altVi         String    // Mô tả bằng tiếng Việt chuẩn accessibility
+  isPrimary     Boolean   @default(false)
+  creator       String?
+  license       String?   // "Unsplash License", "Wikimedia Commons CC-BY-SA", "CutTrack Original"
+  sourceUrl     String?
+  attribution   String?
+  isAiGenerated Boolean   @default(false)
+  reviewedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([foodId])
+  @@map("food_media")
+}
+
+model FoodPrice {
+  id             String    @id @default(uuid())
+  foodId         String
+  food           Food      @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  priceVnd       Int       // Tiền VND dạng integer (ví dụ 30000, 25000)
+  servingName    String    @default("1 phần")
+  location       String?   // Tên quán, khu vực khảo sát
+  isDefault      Boolean   @default(true)
+  isUserReported Boolean   @default(false)
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([foodId])
+  @@map("food_prices")
+}
+
+// ==========================================
+// MEALS & DIARY MODELS
+// ==========================================
+
+model Meal {
+  id                String     @id @default(uuid())
+  userId            String
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime   // Ngày ăn (theo giờ địa phương Asia/Ho_Chi_Minh)
+  slot              MealSlot   @default(LUNCH)
+  customSlotName    String?
+  totalCaloriesKcal Float      @default(0)
+  minCaloriesKcal   Float?
+  maxCaloriesKcal   Float?
+  totalProteinG     Float      @default(0)
+  totalCarbsG       Float      @default(0)
+  totalFatG         Float      @default(0)
+  totalCostVnd      Int        @default(0) // Tiền VND dạng integer
+  notes             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  // Quan hệ
+  items             MealItem[]
+
+  @@index([userId, date])
+  @@index([userId, slot])
+  @@map("meals")
+}
+
+model MealItem {
+  id                 String      @id @default(uuid())
+  mealId             String
+  meal               Meal        @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodId             String
+  food               Food        @relation(fields: [foodId], references: [id], onDelete: Restrict)
+  servingId          String?
+  quantityGrams      Float       // Khối lượng thực tế nạp
+  weightBasis        WeightBasis @default(COOKED)
+  edibleYieldPercent Float?      // Tỷ lệ ăn được nếu tính cả xương
+  itemPortionName    String?     // Tên khẩu phần ("100g bún chín", "1 suất cơm")
+  caloriesKcal       Float
+  minCaloriesKcal    Float?
+  maxCaloriesKcal    Float?
+  proteinG           Float
+  carbsG             Float
+  fatG               Float
+  priceVnd           Int         @default(0) // Tiền VND dạng integer
+  isHomePrepared     Boolean     @default(false) // Trưa không được mang đồ chuẩn bị sẵn
+  notes              String?     // Ghi chú topping, cách chế biến
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([mealId])
+  @@index([foodId])
+  @@map("meal_items")
+}
+
+model MealTemplate {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String   // Tên combo ví dụ: "Cơm gà kho + Pepsi Zero"
+  slot               MealSlot @default(LUNCH)
+  description        String?
+  estimatedKcal      Float
+  estimatedProteinG  Float
+  estimatedCostVnd   Int      // Tiền VND dạng integer
+  templateDataJson   String   // Dữ liệu JSON chi tiết các món trong template
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+  @@map("meal_templates")
+}
+
+// ==========================================
+// EXERCISE & WORKOUT MODELS
+// ==========================================
+
+model Exercise {
+  id               String          @id @default(uuid())
+  slug             String          @unique
+  nameVi           String          // Tên bài tập tiếng Việt (vd: "Hít đất", "Squat tay không")
+  nameEn           String          // Tên tiếng Anh (vd: "Push-up", "Bodyweight Squat")
+  primaryMuscle    String          // Nhóm cơ chính (Ngực, Đùi trước, Lưng, Bụng/Core, v.v.)
+  secondaryMuscles String?         // Nhóm cơ phụ
+  difficulty       Difficulty      @default(BEGINNER)
+  equipment        String          @default("BODYWEIGHT") // BODYWEIGHT, BACKPACK, FOOTBALL
+  defaultSets      Int             @default(3)
+  defaultReps      String          @default("8-12") // Chuỗi reps hoặc thời lượng (vd: "30-45 giây")
+  restSeconds      Int             @default(60)
+  instructionsVi   String          // Hướng dẫn chi tiết từng bước
+  breathingVi      String?         // Hướng dẫn cách hít thở
+  commonMistakesVi String?         // Các lỗi thường gặp cần tránh
+  variationsVi     String?         // Biến thể dễ hơn / khó hơn
+  safetyWarningVi  String?         // Cảnh báo an toàn / khi có đau bất thường
+  createdById      String?
+  createdBy        User?           @relation("UserCustomExercises", fields: [createdById], references: [id], onDelete: SetNull)
+  isSystem         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Quan hệ
+  media            ExerciseMedia[]
+  workoutSets      WorkoutSet[]
+
+  @@index([primaryMuscle])
+  @@map("exercises")
+}
+
+model ExerciseMedia {
+  id              String    @id @default(uuid())
+  exerciseId      String
+  exercise        Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  type            MediaType @default(VIDEO_LOOP_MP4)
+  url             String    // Link animation WebM, MP4 hoặc Lottie
+  posterUrl       String    // Ảnh tĩnh poster bắt buộc
+  altVi           String    // Mô tả cho người khiếm thị / reduced-motion
+  isPrimary       Boolean   @default(true)
+  creator         String?
+  license         String?   // "CC-BY-SA", "Public Domain", "Licensed Commercial"
+  sourceUrl       String?
+  attribution     String?
+  durationSeconds Float?
+  isAiGenerated   Boolean   @default(false)
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([exerciseId])
+  @@map("exercise_media")
+}
+
+model Workout {
+  id                     String       @id @default(uuid())
+  userId                 String
+  user                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                   DateTime
+  title                  String       // Vd: "Buổi 1: Ngực & Tay sau", "Đá banh 45 phút"
+  workoutType            String       @default("STRENGTH") // "STRENGTH", "FOOTBALL", "CARDIO"
+  durationMinutes        Int          @default(45)
+  estimatedCaloriesBurned Float?      // Ghi nhận ước tính, không trừ double count vào TDEE
+  rpe                    Int?         // Mức độ gắng sức (1 - 10)
+  notes                  String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  // Quan hệ
+  sets                   WorkoutSet[]
+
+  @@index([userId, date])
+  @@map("workouts")
+}
+
+model WorkoutSet {
+  id              String   @id @default(uuid())
+  workoutId       String
+  workout         Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exerciseId      String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  setNumber       Int
+  reps            Int?
+  weightKg        Float?   // Khối lượng tạ / ba lô (0 cho bodyweight)
+  durationSeconds Int?     // Thời gian cho các bài giữ như Plank
+  rpe             Int?     // 1 - 10
+  isCompleted     Boolean  @default(true)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([workoutId])
+  @@index([exerciseId])
+  @@map("workout_sets")
+}
+
+model WorkoutPlan {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String   // "Lịch 3 buổi tập sức mạnh tại nhà + 1 buổi đá banh"
+  description      String?
+  daysPerWeek      Int      @default(4)
+  planScheduleJson String   // Lịch chi tiết dạng JSON
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId, isActive])
+  @@map("workout_plans")
+}
+
+// ==========================================
+// BUDGET & FINANCE MODELS
+// ==========================================
+
+model Budget {
+  id                String              @id @default(uuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodStart       DateTime
+  periodEnd         DateTime
+  dailyLimitVnd     Int                 @default(80000)  // 80.000 VND / ngày
+  totalBudgetVnd    Int                 @default(560000) // 7 ngày x 80.000 = 560.000 VND
+  rolloverAmountVnd Int                 @default(0)      // Tiền dư kỳ trước chuyển sang
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Quan hệ
+  transactions      BudgetTransaction[]
+
+  @@index([userId, periodStart, periodEnd])
+  @@map("budgets")
+}
+
+model BudgetTransaction {
+  id          String   @id @default(uuid())
+  budgetId    String?
+  budget      Budget?  @relation(fields: [budgetId], references: [id], onDelete: SetNull)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime
+  amountVnd   Int      // Tiền VND dạng integer
+  category    String   // "LUNCH", "DINNER", "SPECIAL_MEAL", "GROCERY", "OTHER"
+  description String
+  mealId      String?  // Tham chiếu đến Meal nếu tự động tạo từ nhật ký
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([budgetId])
+  @@map("budget_transactions")
+}
+
+// ==========================================
+// PROGRESS & MEASUREMENT MODELS
+// ==========================================
+
+model BodyMeasurement {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  weightKg  Float
+  waistCm   Float?   // Vòng eo
+  hipCm     Float?   // Vòng hông
+  chestCm   Float?   // Vòng ngực
+  notes     String?  // Trạng thái nước, thời điểm cân buổi sáng
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@map("body_measurements")
+}
+
+model ProgressPhoto {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  photoUrl  String   // Đường dẫn lưu trữ ảnh an toàn
+  photoType String   @default("FRONT") // "FRONT", "SIDE", "BACK"
+  isPrivate Boolean  @default(true)    // Quyền riêng tư nghiêm ngặt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@map("progress_photos")
+}
+
+// ==========================================
+// NUTRITION ARTICLES & EDUCATION MODELS
+// ==========================================
+
+model NutritionArticle {
+  id                 String          @id @default(uuid())
+  slug               String          @unique
+  titleVi            String
+  summaryVi          String
+  contentVi          String          // Nội dung Markdown đầy đủ
+  category           String          // "CALORIES_ENERGY", "MACRONUTRIENTS", "FAT_LOSS_VS_WEIGHT_LOSS", v.v.
+  readingTimeMinutes Int             @default(5)
+  coverImageUrl      String?
+  author             String          @default("CutTrack Health Editorial")
+  isPublished        Boolean         @default(true)
+  reviewedAt         DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  // Quan hệ
+  sources            ArticleSource[]
+
+  @@index([slug])
+  @@index([category])
+  @@map("nutrition_articles")
+}
+
+model ArticleSource {
+  id            String           @id @default(uuid())
+  articleId     String
+  article       NutritionArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  title         String
+  publisher     String           // "WHO", "Viện Dinh dưỡng Quốc gia", "PubMed / ISSN", v.v.
+  url           String?
+  publishedYear Int?
+  notes         String?
+  createdAt     DateTime         @default(now())
+
+  @@index([articleId])
+  @@map("article_sources")
+}
+
+// ==========================================
+// WEEKLY MEAL PLANNER MODELS
+// ==========================================
+
+model WeeklyPlan {
+  id                    String           @id @default(uuid())
+  userId                String
+  user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStartDate         DateTime
+  weekEndDate           DateTime
+  targetDailyKcal       Float            @default(1600.0)
+  targetWeeklyBudgetVnd Int              @default(560000) // 560.000 VND/tuần
+  specialMealScheduled  Boolean          @default(true)   // Bữa nửa con gà nướng + cơm lam + bánh bao ngày đá banh
+  notes                 String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  // Quan hệ
+  meals                 WeeklyPlanMeal[]
+
+  @@index([userId, weekStartDate])
+  @@map("weekly_plans")
+}
+
+model WeeklyPlanMeal {
+  id                 String     @id @default(uuid())
+  weeklyPlanId       String
+  weeklyPlan         WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  dayOfWeek          Int        // 1 = Thứ 2, ..., 7 = Chủ Nhật
+  slot               MealSlot   @default(LUNCH)
+  foodId             String
+  food               Food       @relation(fields: [foodId], references: [id], onDelete: Restrict)
+  portionDescription String     // Vd: "1 suất cơm gà kho 30k"
+  estimatedKcal      Float
+  estimatedProteinG  Float
+  estimatedPriceVnd  Int        // Tiền VND dạng integer
+  isSpecialMeal      Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([weeklyPlanId, dayOfWeek])
+  @@index([foodId])
+  @@map("weekly_plan_meals")
+}
