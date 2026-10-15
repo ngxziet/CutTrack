@@ -5,11 +5,6 @@ import { getAppState } from "@/lib/server-actions";
 import { formatCurrencyVND } from "@/lib/utils";
 import { FoodDetailScaler } from "@/components/foods/food-detail-scaler";
 
-export async function generateStaticParams() {
-  const state = await getAppState();
-  return state.foods.map((f) => ({ slug: f.slug }));
-}
-
 export default async function FoodDetailPage({
   params,
 }: {
