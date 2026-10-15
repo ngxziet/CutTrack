@@ -602,3 +602,29 @@ export async function deleteFoodAction(slug: string) {
   return { success: true };
 }
 
+export async function exportFullBackupAction() {
+  const state = loadCutTrackState();
+  return { success: true, state };
+}
+
+export async function importFullBackupAction(jsonContent: string) {
+  try {
+    const parsed = JSON.parse(jsonContent);
+    if (!parsed.profile || !parsed.foods || !parsed.diary) {
+      return { success: false, message: "File sao lưu không đúng định dạng CutTrack." };
+    }
+    saveCutTrackState(parsed);
+    revalidatePath("/dashboard");
+    revalidatePath("/diary");
+    revalidatePath("/foods");
+    revalidatePath("/settings");
+    revalidatePath("/budget");
+    revalidatePath("/progress");
+    revalidatePath("/meal-planner");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi cú pháp file JSON sao lưu." };
+  }
+}
+
+
